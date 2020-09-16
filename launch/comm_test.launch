@@ -4,6 +4,6 @@
         <param name="baud" value="57600" />
     </node>
 
-    <node pkg="stm_ros" type="motor_value_converter" name="motor_value_converter"/>
-    <node pkg="stm_ros" type="motor_cmd_pub" name="motor_cmd_pub"/>
+    <node pkg="AKROS_bridge" type="motor_value_converter" name="motor_value_converter"/>
+    <node pkg="AKROS_bridge" type="motor_cmd_pub" name="motor_cmd_pub"/>
 </launch>
