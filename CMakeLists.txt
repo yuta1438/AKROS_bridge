@@ -62,8 +62,8 @@ include_directories(
 
 
 add_executable(motor_value_converter    src/AK80_6.cpp src/basic_op.cpp src/motor_value_converter.cpp)
-add_executable(motor_cmd_test_pub       src/test_pub/motor_cmd_test_pub.cpp)
-add_executable(motor_can_reply_test_pub src/test_pub/motor_can_reply_test_pub.cpp)
+add_executable(motor_cmd_test_pub       src/test_pub_node/motor_cmd_test_pub.cpp)
+add_executable(motor_can_reply_test_pub src/test_pub_node/motor_can_reply_test_pub.cpp)
 
 target_link_libraries(motor_value_converter    ${catkin_LIBRARIES})
 target_link_libraries(motor_cmd_test_pub       ${catkin_LIBRARIES})
