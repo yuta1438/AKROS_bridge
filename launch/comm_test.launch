@@ -1,0 +1,9 @@
+<launch>
+    <node pkg="rosserial_python" type="serial_node.py" name="rosserial" output="screen">
+        <param name="port" value="/dev/ttyACM0" />
+        <param name="baud" value="57600" />
+    </node>
+
+    <node pkg="stm_ros" type="motor_value_converter" name="motor_value_converter"/>
+    <node pkg="stm_ros" type="motor_cmd_pub" name="motor_cmd_pub"/>
+</launch>
