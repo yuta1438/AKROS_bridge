@@ -6,11 +6,11 @@
 #include <AKROS_bridge/motor_cmd.h>
 #include <AKROS_bridge/motor_reply.h>
 
-// 他のノードからSTMに送信
+// from ROS to STM
 ros::Publisher  stm_pub;
 ros::Subscriber ros_sub;
     
-// STMから受信して，他のノードに送信
+// from STM to ROS
 ros::Publisher  ros_pub;
 ros::Subscriber stm_sub;
 
@@ -20,7 +20,7 @@ ros::Subscriber exit_motor_control_mode_sub;
 ros::Subscriber reset_position_sub;
 
 
-// rosメッセージ -> canメッセージ
+// ROSmsg -> CANMessage
 void ros2can_Cb(const AKROS_bridge::motor_cmd& cmd){
     std_msgs::UInt8MultiArray msg_;
     msg_.data.resize(TX_DATA_LENGTH);
@@ -28,7 +28,7 @@ void ros2can_Cb(const AKROS_bridge::motor_cmd& cmd){
     stm_pub.publish(msg_);
 }
 
-// canメッセージ -> rosメッセージ
+// CANMessage -> ROSmsg
 void can2ros_Cb(const std_msgs::UInt8MultiArray& msg){
     uint8_t id_;
     float pos_, vel_, tor_;
@@ -102,11 +102,11 @@ int main(int argc, char** argv){
 
     ROS_INFO("Converter Ready ...");
 
-    // 他のノードからSTMに送信
+    // To STM
     stm_pub = nh.advertise<std_msgs::UInt8MultiArray>("can_motor_cmd", 10);  // STMマイコンにpub
     ros_sub = nh.subscribe("motor_cmd", 10, ros2can_Cb);
     
-    // STMから受信して，他のノードに送信
+    // To ROS
     ros_pub = nh.advertise<AKROS_bridge::motor_reply>("motor_reply", 10);
     stm_sub = nh.subscribe("can_motor_reply", 10, can2ros_Cb);  // STMマイコンからsub
 

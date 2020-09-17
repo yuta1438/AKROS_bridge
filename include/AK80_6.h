@@ -15,13 +15,13 @@
 #define T_MIN   -18.0f
 #define T_MAX   18.0f
 
-#define TX_DATA_LENGTH  9   // 「モータへの指令 + モータID」のバイト数
+#define TX_DATA_LENGTH  9   // motor_cmd(8byte) + motor_ID(1byte)
 #define RX_DATA_LENGTH  6   // 「モータからの情報」バイト数
 
-// モータへの命令をCANメッセージに変換
+// convert motor_cmd to CAN message
 bool pack_cmd(std_msgs::UInt8MultiArray *msg, uint8_t id, float p_des, float v_des, float kp, float kd, float t_ff);
 
-// モータからの情報をCANメッセージから変換
+// convert can_motor_reply to ROSmsg 
 bool unpack_reply(std_msgs::UInt8MultiArray msg, uint8_t *id, float *pos_, float *vel_, float *tt_f_);
 
 #endif
