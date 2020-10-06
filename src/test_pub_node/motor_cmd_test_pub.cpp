@@ -1,6 +1,6 @@
 #include <ros/ros.h>
 #include <std_msgs/UInt8.h>
-#include "AKROS_bridge/motor_cmd.h"
+#include "AKROS_bridge/motor_cmd_single.h"
 #include <trajectory_msgs/JointTrajectoryPoint.h>
 
 ros::Publisher cmd_pub;
@@ -9,7 +9,7 @@ ros::Publisher exit_motor_control_mode_pub;
 ros::Publisher reset_motor_position_pub;
 ros::Time t_start;
 std_msgs::UInt8 id;
-AKROS_bridge::motor_cmd cmd;
+AKROS_bridge::motor_cmd_single cmd;
 
 static const double Amp = M_PI;
 static const double Freq = 1.0;
@@ -29,7 +29,7 @@ int main(int argc, char** argv){
     exit_motor_control_mode_pub = nh.advertise<std_msgs::UInt8>("exit_motor_control_mode", 1);
     reset_motor_position_pub = nh.advertise<std_msgs::UInt8>("reset_motor_position", 1);
 
-    cmd_pub = nh.advertise<AKROS_bridge::motor_cmd>("motor_cmd", 10);
+    cmd_pub = nh.advertise<AKROS_bridge::motor_cmd_single>("motor_cmd", 10);
 
     
     id.data = 1;

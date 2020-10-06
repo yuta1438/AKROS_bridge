@@ -17,8 +17,8 @@ find_package(catkin REQUIRED COMPONENTS
 ## Generate messages in the 'msg' folder
 add_message_files(
   FILES
-  motor_cmd.msg
-  motor_reply.msg
+  motor_cmd_single.msg
+  motor_reply_single.msg
 )
 
 ## Generate services in the 'srv' folder

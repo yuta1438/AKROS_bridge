@@ -3,8 +3,8 @@
 #include <AK80_6.h>
 #include <std_msgs/UInt8MultiArray.h>
 #include <std_msgs/UInt8.h>
-#include <AKROS_bridge/motor_cmd.h>
-#include <AKROS_bridge/motor_reply.h>
+#include <AKROS_bridge/motor_cmd_single.h>
+#include <AKROS_bridge/motor_reply_single.h>
 
 // from ROS to STM
 ros::Publisher  stm_pub;
@@ -21,7 +21,7 @@ ros::Subscriber reset_position_sub;
 
 
 // ROSmsg -> CANMessage
-void ros2can_Cb(const AKROS_bridge::motor_cmd& cmd){
+void ros2can_Cb(const AKROS_bridge::motor_cmd_single& cmd){
     std_msgs::UInt8MultiArray msg_;
     msg_.data.resize(TX_DATA_LENGTH);
     pack_cmd(&msg_, cmd.id, cmd.position, cmd.velocity, cmd.Kp, cmd.Kd, cmd.torque);
@@ -34,7 +34,7 @@ void can2ros_Cb(const std_msgs::UInt8MultiArray& msg){
     float pos_, vel_, tor_;
     unpack_reply(msg, &id_, &pos_, &vel_, &tor_);
 
-    AKROS_bridge::motor_reply reply_;
+    AKROS_bridge::motor_reply_single reply_;
     reply_.id = id_;
     reply_.position = pos_;
     reply_.velocity = vel_;
@@ -107,7 +107,7 @@ int main(int argc, char** argv){
     ros_sub = nh.subscribe("motor_cmd", 10, ros2can_Cb);
     
     // To ROS
-    ros_pub = nh.advertise<AKROS_bridge::motor_reply>("motor_reply", 10);
+    ros_pub = nh.advertise<AKROS_bridge::motor_reply_single>("motor_reply", 10);
     stm_sub = nh.subscribe("can_motor_reply", 10, can2ros_Cb);  // STMマイコンからsub
 
     // special CAN code
