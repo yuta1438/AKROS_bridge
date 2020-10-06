@@ -5,4 +5,5 @@
     </node>
 
     <node pkg="AKROS_bridge" type="motor_value_converter" name="motor_value_converter"/>
+    <node pkg="AKROS_bridge" type="motor_cmd_test_pub" name="motor_cmd_test_pub"/>
 </launch>

@@ -103,7 +103,7 @@ int main(int argc, char** argv){
     ROS_INFO("Converter Ready ...");
 
     // To STM
-    stm_pub = nh.advertise<std_msgs::UInt8MultiArray>("can_motor_cmd", 10);  // STMマイコンにpub
+    stm_pub = nh.advertise<std_msgs::UInt8MultiArray>("motor_can_cmd", 10);  // STMマイコンにpub
     ros_sub = nh.subscribe("motor_cmd", 10, ros2can_Cb);
     
     // To ROS
