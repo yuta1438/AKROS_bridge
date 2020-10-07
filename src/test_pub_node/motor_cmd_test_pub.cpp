@@ -9,15 +9,22 @@ ros::Publisher exit_motor_control_mode_pub;
 ros::Publisher reset_motor_position_pub;
 ros::Time t_start;
 std_msgs::UInt8 id;
-AKROS_bridge::motor_cmd_single cmd;
+AKROS_bridge::motor_cmd_single cmd[5];
 
 static const double Amp = M_PI;
 static const double Freq = 1.0;
 
 // タイマ割り込み関数
 void timer_callback(const ros::TimerEvent& e){
-    cmd.position = Amp * sin(2 * M_PI * Freq * (ros::Time::now() - t_start).toSec());
-    cmd_pub.publish(cmd);
+    for(int i=0; i<5; i++){
+        cmd[i].id = i;
+        cmd[i].velocity = 0.0;
+        cmd[i].Kp = 450.0;
+        cmd[i].Kd = 4.8;
+        cmd[i].torque = 0.0;
+        cmd[i].position = Amp * sin(2 * M_PI * i * (ros::Time::now() - t_start).toSec());
+        cmd_pub.publish(cmd[i]);
+    }
 }
 
 int main(int argc, char** argv){
@@ -47,13 +54,14 @@ int main(int argc, char** argv){
     //ros::spinOnce();
 
     //sleep(1);
+    /*
     cmd.id = 1;
     cmd.position = 0.0;
     cmd.velocity = 0.0;
     cmd.Kp = 450.0;
     cmd.Kd = 4.8;
     cmd.torque = 0.0;
-    
+    */
     t_start = ros::Time::now();
 
     ros::Timer timer = nh.createTimer(ros::Duration(0.01), timer_callback);
