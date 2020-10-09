@@ -1,5 +1,6 @@
 #include "CAN_controller.h"
 
+namespace CAN_controller{
 void enter_control_mode(CAN can_, uint8_t id_){
     CANMessage msg_;
     msg_.id = id_;
@@ -52,4 +53,5 @@ void set_position_to_zero(CAN can_, uint8_t id_){
     if(can_.write(msg_)){
         // pc.printf("Set the current motor position to zero \r\n");
     }
+}
 }

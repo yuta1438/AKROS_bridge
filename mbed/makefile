@@ -13,8 +13,8 @@
 # limitations under the License.
 #
 # Directories to be built
-DIRS := AKROS_bridge\
-        #pubsub
+DIRS := AKROS_bridge_mbed\
+        pubsub
 DIRSCLEAN := $(addsuffix .clean,$(DIRS))
 
 
