@@ -2,7 +2,8 @@
 // PCからの情報(CANMessage)をMotorに流す
 // Slaveからの返答をPCに流す
 // NucleoではCANメッセージを扱う
-#include <mbed.h>
+
+// #include <mbed.h>
 #include <ros.h>
 #include "CAN_controller/CAN_controller.h"
 #include <std_msgs/UInt8MultiArray.h>
@@ -16,7 +17,7 @@ CANMessage Rx_msg;  // モータからのデータ
 
 
 // ROS側から受け取ったメッセージをそのままモータに流す
-void motor_can_Cb(const std_msgs::UInt8MultiArray& msg);
+void motor_can_Cb(const std_msgs::UInt8MultiArray& msg_);
 void enter_control_mode_Cb(const std_msgs::UInt8& id_);
 void exit_control_mode_Cb(const std_msgs::UInt8& id_);
 void set_zero_pos_Cb(const std_msgs::UInt8& id_);
@@ -72,20 +73,20 @@ int main(void){
     }
 }
 
-void motor_can_Cb(const std_msgs::UInt8MultiArray& msg){
-    // ROS_topicの内容をCANMessageにコピー
-    // 先頭バイトはモータのID
-    // それ以降はモータへの指令
-    for(uint8_t i=0; i<msg.data_length; i++){
+// ROS_topicの内容をCANMessageにコピー
+void motor_can_Cb(const std_msgs::UInt8MultiArray& msg_){
+    for(uint8_t i=0; i<msg_.data_length; i++){
+        // 先頭バイトはモータのID
         if(i==0){
-            Tx_msg.id = msg.data[i];
-        }else{
-            Tx_msg.data[i-1] = msg.data[i];
+            Tx_msg.id = msg_.data[i];
+        }
+        // それ以降はモータへの指令
+        else{
+            Tx_msg.data[i-1] = msg_.data[i];
         }
     }
     can.write(Tx_msg);  // Slaveに送信
 }
-
 
 void enter_control_mode_Cb(const std_msgs::UInt8& id_){
     CAN_controller::enter_control_mode(can, id_.data);

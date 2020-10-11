@@ -14,6 +14,7 @@
 #
 # Directories to be built
 DIRS := AKROS_bridge_mbed\
+		AKROS_bridge_can_mbed\
         pubsub
 DIRSCLEAN := $(addsuffix .clean,$(DIRS))
 
