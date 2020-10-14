@@ -1,4 +1,6 @@
-/* AKROS_bridge_CAN */
+/* AKROS_bridge_can_mbed_single */
+
+// モータ単体用
 // PCからの情報(CANMessage)をMotorに流す
 // Slaveからの返答をPCに流す
 // NucleoではCANメッセージを扱う

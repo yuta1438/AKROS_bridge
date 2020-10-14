@@ -1,8 +1,6 @@
 #ifndef BASIC_OP_H_
 #define BASIC_OP_H_
 
-#define M_PI 3.14159265f
-
 float fmaxf(float x, float y);
 float fminf(float x, float y);
 int float_to_uint(float x, float x_min, float x_max, int bits);
