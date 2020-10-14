@@ -40,17 +40,20 @@ ros::ServiceServer<std_srvs::Empty::Request, std_srvs::Empty::Response> set_zero
 
 
 
-// Slaveからの返信をそのままROSへ流す
+// Motorの返信をROS側に返す
 void CAN_Cb(void){
-    /*
-    if(can.read(Rx_msg)){
-        if(Rx_msg.id == CAN_HOST_ID){
-            for(uint8_t i=0; i<Rx_msg.len; i++)
-                ros_msg.data[i] = Rx_msg.data[i];
+    CANMessage msg_;
+    if(can.read(msg_)){
+        if(msg_.id == CAN_HOST_ID){
+            uint8_t id_;
+            float pos_, vel_, tt_f_;
+            CAN_controller::unpack_reply(msg_, &id_, &pos_, &vel_, &tt_f_);
+
+            motor_reply.position = pos_;
+            motor_reply.velocity = vel_;
+            motor_reply.torque = tt_f_;
         }
-        pub.publish(&ros_msg);
-    }
-    */
+        
 }
 
 
@@ -70,12 +73,6 @@ int main(void){
     // CAN 
     can.frequency(1000000);
     
-    
-    // Initialize_srvを実行したあと！
-    
-    //
-    
-    can.attach(&CAN_Cb);
     
     // ROS
     while(1){
@@ -100,19 +97,20 @@ void enter_control_mode_Cb(const std_srvs::Empty::Request& req_, std_srvs::Empty
     CAN_controller::enter_control_mode(can, MOTOR_ID);
     
     // 受信待ち
-    while(!can.read(msg_)){
-        if(msg_.id == CAN_HOST_ID){
-            uint8_t id_;
-            float pos_, vel_, tt_f_;
-            CAN_controller::unpack_reply(msg_, &id_, &pos_, &vel_, &tt_f_);
+    while(!can.read(msg_));
+    
+    if(msg_.id == CAN_HOST_ID){
+        uint8_t id_;
+        float pos_, vel_, tt_f_;
+        CAN_controller::unpack_reply(msg_, &id_, &pos_, &vel_, &tt_f_);
 
-            motor_reply.position = pos_;
-            motor_reply.velocity = vel_;
-            motor_reply.torque = tt_f_;
-        }
+        motor_reply.position = pos_;
+        motor_reply.velocity = vel_;
+        motor_reply.torque = tt_f_;
     }
 
     motor_reply_pub.publish(&motor_reply);
+    can.attach(&CAN_Cb);
 }
 
 // exit control mode of motor-1
