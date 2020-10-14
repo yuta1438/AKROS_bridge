@@ -22,16 +22,16 @@ DigitalOut myled(LED1);
 void motor_cmd_Cb(const AKROS_bridge::motor_cmd_single&);
 
 // 初期化関係はservice通信で行う
-void enter_control_mode_Cb(const AKROS_bridge::Initialize::Request&, AKROS_bridge::Initialize::Response&);
+void enter_control_mode_Cb(const std_srvs::Empty::Request&, std_srvs::Empty::Response&);
 void exit_control_mode_Cb(const std_srvs::Empty::Request&, std_srvs::Empty::Response&);
 void set_zero_pos_Cb(const std_srvs::Empty::Request&, std_srvs::Empty::Response&);
 
 
 // ROS
 ros::NodeHandle nh;
-AKROS_bridge::motor_reply_single reply;
+AKROS_bridge::motor_reply_single motor_reply;
 
-ros::Publisher motor_reply_pub("motor_reply", &reply);
+ros::Publisher motor_reply_pub("motor_reply", &motor_reply);
 ros::Subscriber<AKROS_bridge::motor_cmd_single> motor_cmd_sub("motor_cmd", &motor_cmd_Cb);
 
 ros::ServiceServer<std_srvs::Empty::Request, std_srvs::Empty::Response> enter_control_mode_sub("enter_control_mode", &enter_control_mode_Cb);
@@ -93,7 +93,7 @@ void motor_cmd_Cb(const AKROS_bridge::motor_cmd_single& cmd_){
 }
 
 // enter control mode of one motor
-void enter_control_mode_Cb(std_srvs::Empty::Request& req_, std_srvs::Empty::Response& res_){
+void enter_control_mode_Cb(const std_srvs::Empty::Request& req_, std_srvs::Empty::Response& res_){
     // 何個のモータを使用するか？
 
     CANMessage msg_;
