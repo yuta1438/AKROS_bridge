@@ -64,10 +64,19 @@ include_directories(
 
 
 
-add_executable(motor_value_converter    src/AK80_6.cpp src/basic_op.cpp src/motor_value_converter.cpp)
-add_executable(motor_cmd_test_pub       src/test_pub_node/motor_cmd_test_pub.cpp)
-add_executable(motor_can_reply_test_pub src/test_pub_node/motor_can_reply_test_pub.cpp)
+add_executable(motor_value_converter      src/AK80_6.cpp src/basic_op.cpp src/motor_value_converter.cpp)
+add_executable(motor_cmd_test_pub         src/test_pub_node/motor_cmd_test_pub.cpp)
+add_executable(motor_can_reply_test_pub   src/test_pub_node/motor_can_reply_test_pub.cpp)
 
-target_link_libraries(motor_value_converter    ${catkin_LIBRARIES})
-target_link_libraries(motor_cmd_test_pub       ${catkin_LIBRARIES})
-target_link_libraries(motor_can_reply_test_pub ${catkin_LIBRARIES})
+# services
+add_executable(enter_control_mode_client  src/test_pub_node/enter_control_mode_client.cpp)
+add_executable(exit_control_mode_client   src/test_pub_node/exit_control_mode_client.cpp)
+add_executable(set_position_zero_client   src/test_pub_node/set_position_zero_client.cpp)
+
+
+target_link_libraries(motor_value_converter       ${catkin_LIBRARIES})
+target_link_libraries(motor_cmd_test_pub          ${catkin_LIBRARIES})
+target_link_libraries(motor_can_reply_test_pub    ${catkin_LIBRARIES})
+target_link_libraries(enter_control_mode_client   ${catkin_LIBRARIES})
+target_link_libraries(exit_control_mode_client    ${catkin_LIBRARIES})
+target_link_libraries(set_position_zero_client    ${catkin_LIBRARIES})
