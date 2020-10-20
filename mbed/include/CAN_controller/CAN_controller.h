@@ -28,11 +28,14 @@
 #define CAN_TX_DATA_LENGTH  8
 #define CAN_RX_DATA_LENGTH  6
 
+
+
 namespace CAN_controller{
 
-void enter_control_mode(const CAN can_, uint8_t id_);
-void exit_control_mode(const CAN can_, uint8_t id_);
-void set_position_to_zero(const CAN can_, uint8_t id_);
+void enter_control_mode(CAN *can_, uint8_t id_);
+void exit_control_mode(CAN *can_, uint8_t id_);
+void set_position_to_zero(CAN *can_, uint8_t id_);
+
 
 // convert motor_cmd to CAN message
 bool pack_cmd(CANMessage* msg_, float p_des, float v_des, float kp, float kd, float t_ff);

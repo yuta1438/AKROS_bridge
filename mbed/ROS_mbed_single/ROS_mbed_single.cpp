@@ -13,10 +13,15 @@
 
 #define MOTOR_ID    1
 
+
 // CAN通信
+bool initializeFlag = false;
 CAN can(CAN_RX_PIN, CAN_TX_PIN);
 
 DigitalOut myled(LED1);
+
+// Motorの返信をROS側に返す
+void CAN_Cb(void);
 
 // ROS側から受け取ったメッセージをそのままモータに流す
 void motor_cmd_Cb(const AKROS_bridge::motor_cmd_single&);
@@ -34,27 +39,10 @@ AKROS_bridge::motor_reply_single motor_reply;
 ros::Publisher motor_reply_pub("motor_reply", &motor_reply);
 ros::Subscriber<AKROS_bridge::motor_cmd_single> motor_cmd_sub("motor_cmd", &motor_cmd_Cb);
 
-ros::ServiceServer<std_srvs::Empty::Request, std_srvs::Empty::Response> enter_control_mode_sub("enter_control_mode", &enter_control_mode_Cb);
-ros::ServiceServer<std_srvs::Empty::Request, std_srvs::Empty::Response> exit_control_mode_sub("exit_control_mode", &exit_control_mode_Cb);
-ros::ServiceServer<std_srvs::Empty::Request, std_srvs::Empty::Response> set_zero_pos_sub("set_zero_pos", &set_zero_pos_Cb);
+ros::ServiceServer<std_srvs::Empty::Request, std_srvs::Empty::Response> enter_control_mode_srv("enter_control_mode", &enter_control_mode_Cb);
+ros::ServiceServer<std_srvs::Empty::Request, std_srvs::Empty::Response> exit_control_mode_srv("exit_control_mode", &exit_control_mode_Cb);
+ros::ServiceServer<std_srvs::Empty::Request, std_srvs::Empty::Response> set_zero_pos_srv("set_position_zero", &set_zero_pos_Cb);
 
-
-
-// Motorの返信をROS側に返す
-void CAN_Cb(void){
-    CANMessage msg_;
-    if(can.read(msg_)){
-        if(msg_.id == CAN_HOST_ID){
-            uint8_t id_;
-            float pos_, vel_, tt_f_;
-            CAN_controller::unpack_reply(msg_, &id_, &pos_, &vel_, &tt_f_);
-
-            motor_reply.position = pos_;
-            motor_reply.velocity = vel_;
-            motor_reply.torque = tt_f_;
-        }
-        
-}
 
 
 int main(void){
@@ -62,23 +50,24 @@ int main(void){
     nh.getHardware()->setBaud(115200);
     nh.initNode();
     
+    nh.advertiseService(enter_control_mode_srv);
+    nh.advertiseService(exit_control_mode_srv);
+    nh.advertiseService(set_zero_pos_srv);
+
     nh.advertise(motor_reply_pub);
     nh.subscribe(motor_cmd_sub);
 
-    nh.advertiseService(enter_control_mode_sub);
-    nh.advertiseService(exit_control_mode_sub);
-    nh.advertiseService(set_zero_pos_sub);
-    
-
     // CAN 
     can.frequency(1000000);
-    
+    can.attach(&CAN_Cb);
     
     // ROS
     while(1){
         nh.spinOnce();
-        wait_ms(1);
+        wait_ms(10);
     }
+
+    return 0;
 }
 
 // ROS_topicの内容をCANMessageにコピー
@@ -89,36 +78,55 @@ void motor_cmd_Cb(const AKROS_bridge::motor_cmd_single& cmd_){
     can.write(msg_);  // Slaveに送信
 }
 
+
+// CANメッセージを受け取ったら
+// 一旦変数に格納
+void CAN_Cb(void){
+    CANMessage msg_;
+    if(can.read(msg_)){
+        if(msg_.id == CAN_HOST_ID){
+            uint8_t id_;
+            float pos_, vel_, tt_f_;
+            CAN_controller::unpack_reply(msg_, &id_, &pos_, &vel_, &tt_f_);
+
+            motor_reply.id = id_;
+            motor_reply.position = pos_;
+            motor_reply.velocity = vel_;
+            motor_reply.torque = tt_f_;
+        }
+    }
+}
+
 // enter control mode of one motor
 void enter_control_mode_Cb(const std_srvs::Empty::Request& req_, std_srvs::Empty::Response& res_){
-    // 何個のモータを使用するか？
-
     CANMessage msg_;
-    CAN_controller::enter_control_mode(can, MOTOR_ID);
+    CAN_controller::enter_control_mode(&can, MOTOR_ID);
+    wait_ms(1);
     
     // 受信待ち
-    while(!can.read(msg_));
-    
-    if(msg_.id == CAN_HOST_ID){
-        uint8_t id_;
-        float pos_, vel_, tt_f_;
-        CAN_controller::unpack_reply(msg_, &id_, &pos_, &vel_, &tt_f_);
+    /*
+    if(can.read(msg_)){
+        if(msg_.id == CAN_HOST_ID){
+            uint8_t id_;
+            float pos_, vel_, tt_f_;
+            CAN_controller::unpack_reply(msg_, &id_, &pos_, &vel_, &tt_f_);
 
-        motor_reply.position = pos_;
-        motor_reply.velocity = vel_;
-        motor_reply.torque = tt_f_;
-    }
-
+            motor_reply.id = id_;
+            motor_reply.position = pos_;
+            motor_reply.velocity = vel_;
+            motor_reply.torque = tt_f_;
+        }
+    }*/
+    wait_ms(10);
     motor_reply_pub.publish(&motor_reply);
-    can.attach(&CAN_Cb);
 }
 
 // exit control mode of motor-1
 void exit_control_mode_Cb(const std_srvs::Empty::Request& req_, std_srvs::Empty::Response& res_){
-    CAN_controller::exit_control_mode(can, MOTOR_ID);
+    CAN_controller::exit_control_mode(&can, MOTOR_ID);
 }
 
 // set the angle of motor-1 to zero
 void set_zero_pos_Cb(const std_srvs::Empty::Request& req_, std_srvs::Empty::Response& res_){
-    CAN_controller::set_position_to_zero(can, MOTOR_ID);
+    CAN_controller::set_position_to_zero(&can, MOTOR_ID);
 }

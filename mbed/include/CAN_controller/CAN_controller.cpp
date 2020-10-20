@@ -1,7 +1,7 @@
 #include "CAN_controller.h"
 
 namespace CAN_controller{
-void enter_control_mode(CAN can_, uint8_t id_){
+void enter_control_mode(CAN *can_, uint8_t id_){
     CANMessage msg_;
     msg_.id = id_;
     msg_.len = CAN_TX_DATA_LENGTH;
@@ -14,11 +14,11 @@ void enter_control_mode(CAN can_, uint8_t id_){
     msg_.data[6] = 0xFF;
     msg_.data[7] = 0xFC;
     
-    can_.write(msg_);
+    can_->write(msg_);
 }
 
 // Exit motor control mode
-void exit_control_mode(CAN can_, uint8_t id_){
+void exit_control_mode(CAN *can_, uint8_t id_){
     CANMessage msg_;
     msg_.id = id_;
     msg_.len = CAN_TX_DATA_LENGTH;
@@ -31,13 +31,11 @@ void exit_control_mode(CAN can_, uint8_t id_){
     msg_.data[6] = 0xFF;
     msg_.data[7] = 0xFD;
     
-    if(can_.write(msg_)){
-        // pc.printf("Exit motor control mode \r\n");
-    }
+    can_->write(msg_);
 }
 
 // set the current motor position to zero
-void set_position_to_zero(CAN can_, uint8_t id_){
+void set_position_to_zero(CAN *can_, uint8_t id_){
     CANMessage msg_;
     msg_.id = id_;
     msg_.len = CAN_TX_DATA_LENGTH;
@@ -50,7 +48,7 @@ void set_position_to_zero(CAN can_, uint8_t id_){
     msg_.data[6] = 0xFF;
     msg_.data[7] = 0xFE;
     
-    if(can_.write(msg_)){
+    if(can_->write(msg_)){
         // pc.printf("Set the current motor position to zero \r\n");
     }
 }
@@ -86,12 +84,11 @@ bool pack_cmd(CANMessage* msg_, float p_des, float v_des, float kp, float kd, fl
 
 
 bool unpack_reply(CANMessage msg, uint8_t *id_, float *pos_, float *vel_, float *tt_f_){
-
+    *id_ = msg.data[0];
     int p_int = (msg.data[1]<<8) | msg.data[2];
     int v_int = (msg.data[3]<<4) | (msg.data[4]>>4);
     int i_int = ((msg.data[4]&0xF)<<8) | msg.data[5];
     
-    *id_ = msg.data[0];
     *pos_ = uint_to_float(p_int, P_MIN, P_MAX, 16);
     *vel_ = uint_to_float(v_int, V_MIN, V_MAX, 12);
     *tt_f_ = uint_to_float(i_int, T_MIN, T_MAX, 12);

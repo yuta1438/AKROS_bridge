@@ -17,7 +17,7 @@ DIRS := ROS_mbed\
 		ROS_mbed_single\
 		can\
 		can_single\
-        pubsub
+        slave
 DIRSCLEAN := $(addsuffix .clean,$(DIRS))
 
 
