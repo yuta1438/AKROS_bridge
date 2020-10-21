@@ -9,7 +9,6 @@ project(AKROS_bridge)
 ## is used, also find other catkin packages
 find_package(catkin REQUIRED COMPONENTS
   roscpp
-  rospy
   std_msgs
   trajectory_msgs
   sensor_msgs
@@ -21,12 +20,15 @@ add_message_files(
   FILES
   motor_cmd_single.msg
   motor_reply_single.msg
+  motor_cmd.msg
+  motor_reply.msg
 )
 
 ## Generate services in the 'srv' folder
 add_service_files(
   FILES
   Initialize.srv
+  Initialize_single.srv
 )
 
 ## Generate actions in the 'action' folder
@@ -47,7 +49,7 @@ generate_messages(
 catkin_package(
 #  INCLUDE_DIRS include
 #  LIBRARIES AKROS_bridge
-  CATKIN_DEPENDS roscpp rospy std_msgs sensor_msgs message_runtime
+  CATKIN_DEPENDS message_runtime roscpp rospy std_msgs trajectory_msgs sensor_msgs
 #  DEPENDS system_lib
 )
 
@@ -72,6 +74,9 @@ add_executable(motor_can_reply_test_pub   src/test_pub_node/motor_can_reply_test
 add_executable(enter_control_mode_client  src/test_pub_node/enter_control_mode_client.cpp)
 add_executable(exit_control_mode_client   src/test_pub_node/exit_control_mode_client.cpp)
 add_executable(set_position_zero_client   src/test_pub_node/set_position_zero_client.cpp)
+
+# using AKROS_bridge msg
+add_dependencies(motor_cmd_test_pub ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 
 
 target_link_libraries(motor_value_converter       ${catkin_LIBRARIES})

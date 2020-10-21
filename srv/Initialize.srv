@@ -1,3 +1,5 @@
+# How many motors does robot have ?
 uint8   joint_num
 ---
-sensor_msgs/JointState  joint_state
+# Robot initial state
+sensor_msgs/JointState  jointstate

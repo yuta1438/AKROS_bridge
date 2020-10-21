@@ -1,1 +1,1 @@
-This repo is for mbed files using gcc4mbed
+This repo is mbed files using gcc4mbed
