@@ -1,24 +1,22 @@
 #include <ros/ros.h>
-#include <std_srvs/Empty.h>
+#include <AKROS_bridge/Initialize_single.h>
 
 int main(int argc, char** argv){
-    ros::init(argc, argv, "test_client");
+    ros::init(argc, argv, "enter_control_mode_client");
 
     ros::NodeHandle nh;
-    ros::ServiceClient client1 = nh.serviceClient<std_srvs::Empty>("enter_control_mode");
+    ros::ServiceClient client1 = nh.serviceClient<AKROS_bridge::Initialize_single>("enter_control_mode");
     //ros::ServiceClient client2 = nh.serviceClient<std_srvs::Empty>("exit_control_mode");
 
-    std_srvs::Empty srv;
+    AKROS_bridge::Initialize_single srv;
 
-    ROS_INFO("client 1 called");
+    ROS_INFO("client called");
     client1.call(srv);
-    ROS_INFO("client 1 finish");
+    ROS_INFO("client finish");
 
-    
-    //ROS_INFO("client 2 called");
-    //client2.call(srv);
-    //ROS_INFO("client 2 finish");
-    
+    ROS_INFO("current pos: %f", srv.response.q);
+    ROS_INFO("current vel: %f", srv.response.dq);
+    ROS_INFO("current tau: %f", srv.response.tau);
 
     return 0;
 }

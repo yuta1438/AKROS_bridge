@@ -221,6 +221,7 @@ NUCLEO_F303K8/ROS_mbed_single.o: ROS_mbed_single.cpp \
  /home/fal/ros/lib/ros_lib/BufferedSerial/BufferedSerial.h \
  /home/fal/ros/lib/ros_lib/BufferedSerial/Buffer/Buffer.h \
  /home/fal/ros/lib/ros_lib/std_srvs/Empty.h \
+ /home/fal/ros/lib/ros_lib/AKROS_bridge/Initialize_single.h \
  /home/fal/ros/lib/ros_lib/AKROS_bridge/motor_cmd_single.h \
  /home/fal/ros/lib/ros_lib/AKROS_bridge/motor_reply_single.h \
  ../include/CAN_controller/CAN_controller.h \
@@ -674,6 +675,8 @@ NUCLEO_F303K8/ROS_mbed_single.o: ROS_mbed_single.cpp \
 /home/fal/ros/lib/ros_lib/BufferedSerial/Buffer/Buffer.h:
 
 /home/fal/ros/lib/ros_lib/std_srvs/Empty.h:
+
+/home/fal/ros/lib/ros_lib/AKROS_bridge/Initialize_single.h:
 
 /home/fal/ros/lib/ros_lib/AKROS_bridge/motor_cmd_single.h:
 
