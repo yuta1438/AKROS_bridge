@@ -20,7 +20,7 @@ Interpolator<Vector2d> interpolator;
 
 
 int main(int argc, char** argv){
-    ros::init(argc, argv, "motor_cmd_publisher");
+    ros::init(argc, argv, "motor_controller");
     ros::NodeHandle nh;
     ros::Rate loop_rate(10);
 
