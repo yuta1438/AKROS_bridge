@@ -60,7 +60,7 @@ int main(void){
 
     // CAN 
     can.frequency(1000000);
-    can.attach(&CAN_Cb);
+    can.attach(&can_Cb);
     
     // ROS
     
@@ -75,22 +75,23 @@ void motor_cmd_Cb(const AKROS_bridge::motor_cmd& cmd_){
     for(uint8_t i=0; i<=motor.size(); i++){
         CANMessage msg_;
         msg_.id = i+1;     // Motor_IDは1から始まる
-        CAN_controller::pack_cmd(&msg_, cmd_)
+        //CAN_controller::pack_cmd(&msg_, cmd_.cmd.positions[i], cmd_.cmd.velocities[i], cmd_.Kp)
     }
 }
 
 
 // Motorからのreplyを一旦変数に格納
-void CAN_Cb(void){
+void can_Cb(void){
+    CANMessage msg_;
     if(can.read(msg_)){
         if(msg_.id == CAN_HOST_ID){
             uint8_t id_;
             float pos_, vel_, tt_f_;
             CAN_controller::unpack_reply(msg_, &id_, &pos_, &vel_, &tt_f_);
 
-            motor.[id_] = pos_;
-            js.velocity[id_] = vel_;
-            js.effort[id_] = tt_f_;
+            motor.q[id_] = pos_;
+            motor.dq[id_] = vel_;
+            motor.effort[id_] = tt_f_;
         }
     }
 }
@@ -123,12 +124,12 @@ void enter_control_mode_Cb(const AKROS_bridge::Initialize::Request& req_, AKROS_
                 CAN_controller::unpack_reply(msg_, &id_, &pos_, &vel_, &tt_f_);
 
                 // store in Response
-                res_jointstate.position[id_] = pos_;
-                res_jointstate.velocity[id_] = vel_;
-                res_jointstate.effort[id_]   = tt_f_;
+                res_.jointstate.position[id_] = pos_;
+                res_.jointstate.velocity[id_] = vel_;
+                res_.jointstate.effort[id_]   = tt_f_;
 
                 // store in motor_state
-                motor.q
+                // motor.q
             }
         }
     }

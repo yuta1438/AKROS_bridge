@@ -10,6 +10,8 @@ int main(int argc, char** argv){
 
     AKROS_bridge::Initialize_single srv;
 
+
+    // Initialize
     ROS_INFO("client called");
     client1.call(srv);
     ROS_INFO("client finish");
