@@ -1,6 +1,6 @@
 PROJECT         := ROS_mbed_single
-#DEVICES         := NUCLEO_F446RE
-DEVICES         := NUCLEO_F303K8
+DEVICES         := NUCLEO_F446RE
+#DEVICES         := NUCLEO_F303K8
 GCC4MBED_DIR    := $(GCC4MBED_DIR)
 USER_LIBS       := !$(ROS_LIB_DIR) $(ROS_LIB_DIR)/BufferedSerial\
 				   ../include

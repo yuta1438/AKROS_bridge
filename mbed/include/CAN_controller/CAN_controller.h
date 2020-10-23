@@ -20,11 +20,6 @@
 #define CAN_HOST_ID     0
 #define CAN_FREQ        1000000
 
-// F303K8
-#define CAN_RX_PIN  PA_11
-#define CAN_TX_PIN  PA_12
-
-// F446RE
 
 #define CAN_TX_DATA_LENGTH  8
 #define CAN_RX_DATA_LENGTH  6

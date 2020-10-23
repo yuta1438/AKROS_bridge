@@ -4,20 +4,38 @@
 // Motorからの返答をROSに流す
 // モータの情報をマイコン内に格納しておけば同期等が必要なくなるのでは？
 
+
+
 // #include <mbed.h>
 #include <vector>
 #include <ros.h>
 #include <std_srvs/Empty.h>
+#include <motor_status/motor_status.h>
 #include <AKROS_bridge/Initialize_single.h>
 #include <AKROS_bridge/motor_cmd_single.h>
 #include <AKROS_bridge/motor_reply_single.h>
 #include <CAN_controller/CAN_controller.h>
 
 #define MOTOR_ID    1
+#define TARGET_BOARD NUCLEO_F446RE
+
+
 
 // CAN通信
 // MotorのCAN_IDは1から始まるので注意！
+// F303K8
+//#if TARGET_BOARD==NUCLEO_F303K8
+// F446RE
+//#define CAN_RX_PIN  PA_11
+//#define CAN_TX_PIN  PA_12
+//#elif TARGET_BOARD==NUCLEO_F446RE
+
+// F446RE
+#define CAN_RX_PIN PB_8
+#define CAN_TX_PIN PB_9
+//#endif
 CAN can(CAN_RX_PIN, CAN_TX_PIN);
+motor_status motor;
 
 DigitalOut myled(LED1);
 
@@ -49,7 +67,7 @@ int main(void){
     myled = 0;
     nh.getHardware()->setBaud(115200);
     nh.initNode();
-    
+    motor.initialize(1);
     nh.advertiseService(enter_control_mode_srv);
     nh.advertiseService(exit_control_mode_srv);
     nh.advertiseService(set_zero_pos_srv);
@@ -112,6 +130,10 @@ void enter_control_mode_Cb(const AKROS_bridge::Initialize_single::Request& req_,
             res_.q = pos_;
             res_.dq = vel_;
             res_.tau = tt_f_;
+            
+            motor.q[0] = pos_;
+            motor.dq[0] = vel_;
+            motor.effort[0] = tt_f_;
         }
     }
 

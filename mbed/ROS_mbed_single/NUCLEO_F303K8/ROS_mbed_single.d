@@ -223,6 +223,7 @@ NUCLEO_F303K8/ROS_mbed_single.o: ROS_mbed_single.cpp \
  /home/falaptop/ros/lib/ros_lib/BufferedSerial/BufferedSerial.h \
  /home/falaptop/ros/lib/ros_lib/BufferedSerial/Buffer/Buffer.h \
  /home/falaptop/ros/lib/ros_lib/std_srvs/Empty.h \
+ ../include/motor_status/motor_status.h \
  /home/falaptop/ros/lib/ros_lib/AKROS_bridge/Initialize_single.h \
  /home/falaptop/ros/lib/ros_lib/AKROS_bridge/motor_cmd_single.h \
  /home/falaptop/ros/lib/ros_lib/AKROS_bridge/motor_reply_single.h \
@@ -677,6 +678,8 @@ NUCLEO_F303K8/ROS_mbed_single.o: ROS_mbed_single.cpp \
 /home/falaptop/ros/lib/ros_lib/BufferedSerial/Buffer/Buffer.h:
 
 /home/falaptop/ros/lib/ros_lib/std_srvs/Empty.h:
+
+../include/motor_status/motor_status.h:
 
 /home/falaptop/ros/lib/ros_lib/AKROS_bridge/Initialize_single.h:
 
