@@ -3,6 +3,7 @@
 
 #include "mbed.h"
 #include "CAN.h"
+#include "config.h"
 #include "../basic_op/basic_op.h"
 
 #define P_MIN   -95.5f
@@ -19,6 +20,15 @@
 // CAN Settings
 #define CAN_HOST_ID     0
 #define CAN_FREQ        1000000
+
+#if TARGET_BOARD==NUCLEO_F446RE
+    #define CAN_RX_PIN  PB_8
+    #define CAN_TX_PIN  PB_9
+#elif TARGET_BOARD==NUCLEO_F303K8
+    #define CAN_RX_PIN  PA_11
+    #define CAN_TX_PIN  PA_12
+#else
+#endif
 
 
 #define CAN_TX_DATA_LENGTH  8

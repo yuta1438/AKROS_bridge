@@ -11,15 +11,16 @@ private:
     uint8_t motor_num;
 
 public:
-    motor_status();
+    motor_status(){}
+    ~motor_status(){};
     std::vector<float> q;
     std::vector<float> q_ref;
     std::vector<float> dq;
     std::vector<float> dq_ref;
-    std::vector<float> effort;
-    std::vector<float> effort_ref;
+    std::vector<float> tau;
+    std::vector<float> tau_ref;
 
     void initialize(uint8_t);
-    uint8_t size(void);
+    uint8_t getSize(void);
 };
 #endif

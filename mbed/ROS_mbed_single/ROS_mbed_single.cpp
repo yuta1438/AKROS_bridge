@@ -4,7 +4,8 @@
 // Motorからの返答をROSに流す
 // モータの情報をマイコン内に格納しておけば同期等が必要なくなるのでは？
 
-
+#define MOTOR_ID    1
+#define TARGET_BOARD NUCLEO_F446RE
 
 // #include <mbed.h>
 #include <vector>
@@ -15,10 +16,6 @@
 #include <AKROS_bridge/motor_cmd_single.h>
 #include <AKROS_bridge/motor_reply_single.h>
 #include <CAN_controller/CAN_controller.h>
-
-#define MOTOR_ID    1
-#define TARGET_BOARD NUCLEO_F446RE
-
 
 
 // CAN通信
@@ -31,8 +28,8 @@
 //#elif TARGET_BOARD==NUCLEO_F446RE
 
 // F446RE
-#define CAN_RX_PIN PB_8
-#define CAN_TX_PIN PB_9
+//#define CAN_RX_PIN PB_8
+//#define CAN_TX_PIN PB_9
 //#endif
 CAN can(CAN_RX_PIN, CAN_TX_PIN);
 motor_status motor;

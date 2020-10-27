@@ -1,12 +1,11 @@
 <launch>
     <arg name="record_mode" default="false"/>
     <arg name="rosbag_name"/>
-
-    <node pkg="rosserial_python" type="serial_node.py" name="rosserial" output="screen">
+    <node pkg="rosserial_python" type="serial_node.py" name="rosserial" output="screen"/>
         <param name="port" value="/dev/ttyACM0" />
         <param name="baud" value="115200" />
 
-    <group if="$(arg record)">
+    <group if="$(arg record_mode)">
         <node pkg="rosbag" type="record" name="recorder"
               args="-O $(find AKROS_bridge)/rosbag/$(arg rosbag_name) -a"/>
     </group>

@@ -8,7 +8,7 @@
             "includePath": [
                 "/usr/include/",
                 "~/ros/lib/ros_lib/",
-                "~/catkin_ws/src/AKROS_bridge/mbed/include/"
+                "~/catkin_ws/src/AKROS_bridge/mbed/include/**"
             ],
             "name": "ROS",
             "intelliSenseMode": "gcc-x64",
