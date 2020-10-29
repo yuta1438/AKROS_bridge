@@ -3,6 +3,7 @@
 
 #include "mbed.h"
 #include "CAN.h"
+#include "../motor_status/motor_status.h"
 #include "config.h"
 #include "../basic_op/basic_op.h"
 
@@ -35,7 +36,7 @@
 #define CAN_RX_DATA_LENGTH  6
 
 
-
+// motor_statusに保存された値を送信&受信データを保存
 namespace CAN_controller{
 
 void enter_control_mode(CAN *can_, uint8_t id_);
@@ -43,9 +44,9 @@ void exit_control_mode(CAN *can_, uint8_t id_);
 void set_position_to_zero(CAN *can_, uint8_t id_);
 
 // convert motor_cmd to CAN message
-bool pack_cmd(CANMessage* msg_, float p_des, float v_des, float kp, float kd, float t_ff);
+bool pack_cmd(CANMessage* msg_, motor_status motor_);
 
 // convert can_motor_reply to ROSmsg 
-bool unpack_reply(CANMessage msg, uint8_t *id, float *pos_, float *vel_, float *tt_f_);
+bool unpack_reply(CANMessage msg, motor_status *motor_);
 }
 #endif

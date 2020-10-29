@@ -1,22 +1,20 @@
 /* ROS_mbed */
 // PCからの情報(ROSMessage)をMotorに流す
 // Motorからの返答をROSに流す
+// 指令値，現在地は一旦マイコン内に格納することにする
 
-// select your target board
-#define TARGET_BOARD    NUCLEO_F446RE
-#define ROS_FREQ        100 //[Hz]
 
 // #include <mbed.h>
 #include <ros.h>
 #include <AKROS_bridge/Initialize.h>
 #include <std_srvs/Empty.h>
 #include <CAN_controller/CAN_controller.h>
-#include <motor_status/motor_status.h>
 #include <AKROS_bridge/motor_cmd.h>
 #include <AKROS_bridge/motor_reply.h>
 
 // motor
-motor_status motor;
+std::vector<motor_status> motor;
+uint8_t motor_num;
 
 // CAN通信
 // MotorのCAN_IDは1から始まるので注意！
@@ -73,54 +71,42 @@ int main(void){
     }
 }
 
-// motor_cmd(JointTrajectoryPoint)の内容をCANMessageにコピー
-void motor_cmd_Cb(const AKROS_bridge::motor_cmd& cmd_){
-    for(uint8_t i=0; i<motor.getSize(); i++){
-        CANMessage msg_;
 
-        msg_.id = i+1;     // Motor_IDは1から始まる
-        motor.q_ref[i] = cmd_.cmd.positions[i];
-        motor.dq_ref[i] = cmd_.cmd.velocities[i];
-        motor.tau_ref[i] = cmd_.cmd.effort[i];
-        CAN_controller::pack_cmd(&msg_, cmd_.cmd.positions[i], cmd_.cmd.velocities[i], cmd_.Kp[i], cmd_.Kd[i], cmd_.cmd.effort[i]);
-        can.write(msg_);
+// 指令値をmotor_statusに格納
+void motor_cmd_Cb(const AKROS_bridge::motor_cmd& cmd_){
+    for(uint8_t i=0; i<motor_num; i++){
+        motor[i].q_ref = cmd_.cmd.positions[i];
+        motor[i].dq_ref = cmd_.cmd.velocities[i];
+        motor[i].tau_ref = cmd_.cmd.effort[i];
     }
 }
 
 
-// Motorからのreplyを一旦変数に格納
+// Motorからのreplyをmotor_statusに格納
 void can_Cb(void){
     CANMessage msg_;
     if(can.read(msg_)){
         if(msg_.id == CAN_HOST_ID){
-            uint8_t id_;
-            float pos_, vel_, tt_f_;
-            CAN_controller::unpack_reply(msg_, &id_, &pos_, &vel_, &tt_f_);
-
-            motor.q[id_] = pos_;
-            motor.dq[id_] = vel_;
-            motor.tau[id_] = tt_f_;
+            CAN_controller::unpack_reply(msg_, &motor); // &motorの引数をなくしたい
         }
     }
 }
 
 
 // enter control mode server
-// 0度に自動的になるようにしたい(actionlibを使用すればできそう？)
 void enter_control_mode_Cb(const AKROS_bridge::Initialize::Request& req_, AKROS_bridge::Initialize::Response& res_){
     // 何個のモータを使用するか？
-    res_.jointstate.position_length = req_.joint_num;
-    res_.jointstate.velocity_length = req_.joint_num;
-    res_.jointstate.effort_length   = req_.joint_num;
+    motor_num = req_.joint_num;
+    res_.jointstate.position_length = motor_num;
+    res_.jointstate.velocity_length = motor_num;
+    res_.jointstate.effort_length   = motor_num;
 
-    motor.initialize(req_.joint_num);
-
-    res_.jointstate.position = (double *)malloc(sizeof(double) * res_.jointstate.position_length);
-    res_.jointstate.velocity = (double *)malloc(sizeof(double) * res_.jointstate.velocity_length);
-    res_.jointstate.effort   = (double *)malloc(sizeof(double) * res_.jointstate.effort_length);
+    res_.jointstate.position = (double *)malloc(sizeof(double) * motor_num);
+    res_.jointstate.velocity = (double *)malloc(sizeof(double) * motor_num);
+    res_.jointstate.effort   = (double *)malloc(sizeof(double) * motor_num);
 
 
-    for(uint8_t i=0; i<req_.joint_num; i++){
+    for(uint8_t i=0; i<motor_num; i++){
         CANMessage msg_;
         // モータのCAN_IDは1から始まる
         CAN_controller::enter_control_mode(&can, i+1);
@@ -129,19 +115,13 @@ void enter_control_mode_Cb(const AKROS_bridge::Initialize::Request& req_, AKROS_
         // 受信待ち
         if(can.read(msg_)){
             if(msg_.id == CAN_HOST_ID){
-                uint8_t id_;
-                float pos_, vel_, tt_f_;
-                CAN_controller::unpack_reply(msg_, &id_, &pos_, &vel_, &tt_f_);
+                CAN_controller::unpack_reply(msg_);
 
                 // store in Response
-                res_.jointstate.position[id_-1] = pos_;
-                res_.jointstate.velocity[id_-1] = vel_;
-                res_.jointstate.effort[id_-1]   = tt_f_;
+                res_.jointstate.position[i] = motor[i].q;
+                res_.jointstate.velocity[i] = motor[i].dq;
+                res_.jointstate.effort[i]   = motor[i].tau;
 
-                // store in motor_state
-                motor.q[id_-1]    = pos_;
-                motor.dq[id_-1]   = vel_;
-                motor.tau[id_-1]  = tt_f_;
             }
         }
     }
@@ -151,7 +131,7 @@ void enter_control_mode_Cb(const AKROS_bridge::Initialize::Request& req_, AKROS_
 
 // exit control mode of motor-1
 void exit_control_mode_Cb(const std_srvs::Empty::Request& req_, std_srvs::Empty::Response& res_){
-    for(int i=0; i<motor.getSize(); i++){
+    for(int i=0; i<motor_num; i++){
         CAN_controller::exit_control_mode(&can, i+1);
         wait_ms(10);
     }
@@ -160,7 +140,7 @@ void exit_control_mode_Cb(const std_srvs::Empty::Request& req_, std_srvs::Empty:
 
 // set the angle of motor-1 to zero
 void set_zero_pos_Cb(const std_srvs::Empty::Request& req_, std_srvs::Empty::Response& res_){
-    for(int i=0; i<motor.getSize(); i++){
+    for(int i=0; i<motor_num; i++){
         CAN_controller::set_position_to_zero(&can, i+1);
         wait_ms(10);
     }

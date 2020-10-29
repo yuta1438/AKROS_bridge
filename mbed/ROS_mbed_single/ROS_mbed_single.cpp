@@ -117,7 +117,7 @@ void CAN_Cb(void){
 void enter_control_mode_Cb(const AKROS_bridge::Initialize_single::Request& req_, AKROS_bridge::Initialize_single::Response& res_){
     CANMessage msg_;
     CAN_controller::enter_control_mode(&can, MOTOR_ID);
-    wait_ms(10);
+    wait_ms(100);
 
     if(can.read(msg_)){
         if(msg_.id == CAN_HOST_ID){
@@ -130,7 +130,7 @@ void enter_control_mode_Cb(const AKROS_bridge::Initialize_single::Request& req_,
             
             motor.q[0] = pos_;
             motor.dq[0] = vel_;
-            motor.effort[0] = tt_f_;
+            motor.tau[0] = tt_f_;
         }
     }
 
@@ -141,8 +141,7 @@ void enter_control_mode_Cb(const AKROS_bridge::Initialize_single::Request& req_,
 void exit_control_mode_Cb(const AKROS_bridge::Initialize_single::Request& req_, AKROS_bridge::Initialize_single::Response& res_){
     CANMessage msg_;
     CAN_controller::exit_control_mode(&can, MOTOR_ID);
-    wait_ms(10);
-
+    
     if(can.read(msg_)){
         if(msg_.id == CAN_HOST_ID){
             uint8_t id_;

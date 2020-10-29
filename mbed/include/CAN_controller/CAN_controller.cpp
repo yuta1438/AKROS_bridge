@@ -53,21 +53,21 @@ void set_position_to_zero(CAN *can_, uint8_t id_){
     }
 }
 
-bool pack_cmd(CANMessage* msg_, float p_des, float v_des, float kp, float kd, float t_ff){
+bool pack_cmd(CANMessage* msg_, motor_status motor_){
 
-    // 
-    p_des = fminf(fmaxf(P_MIN, p_des), P_MAX);
-    v_des = fminf(fmaxf(V_MIN, v_des), V_MAX);
-    kp = fminf(fmaxf(KP_MIN, kp), KP_MAX);
-    kd = fminf(fmaxf(KD_MIN, kd), KD_MAX);
-    t_ff = fminf(fmaxf(T_MIN, t_ff), T_MAX);
+    // Set Limit 
+    motor_.q_ref   = fminf(fmaxf(P_MIN, motor_.q_ref), P_MAX);
+    motor_.dq_ref  = fminf(fmaxf(V_MIN, motor_.dq_ref), V_MAX);
+    motor_.kp      = fminf(fmaxf(KP_MIN, motor_.kp), KP_MAX);
+    motor_.kd      = fminf(fmaxf(KD_MIN, motor_.kd), KD_MAX);
+    motor_.tau_ref = fminf(fmaxf(T_MIN, motor_.tau_ref), T_MAX);
     
     // convert float -> uint
-    int p_int = float_to_uint(p_des, P_MIN, P_MAX, 16);     // Position
-    int v_int = float_to_uint(v_des, V_MIN, V_MAX, 12);     // Velocity
-    int kp_int = float_to_uint(kp, KP_MIN, KP_MAX, 12);     // Kp
-    int kd_int = float_to_uint(kd, KD_MIN, KD_MAX, 12);     // Kd
-    int t_int = float_to_uint(t_ff, T_MIN, T_MAX, 12);      // Torque
+    int p_int  = float_to_uint(motor_.q_ref, P_MIN, P_MAX, 16);     // Position
+    int v_int  = float_to_uint(motor_.dq_ref, V_MIN, V_MAX, 12);     // Velocity
+    int kp_int = float_to_uint(motor_.Kp, KP_MIN, KP_MAX, 12);     // Kp
+    int kd_int = float_to_uint(motor_.kd, KD_MIN, KD_MAX, 12);     // Kd
+    int t_int  = float_to_uint(motor_.tau_ref, T_MIN, T_MAX, 12);      // Torque
     
     // Pack ints into the CAN buffer
     msg_->data[0] = p_int >> 8;
@@ -83,15 +83,17 @@ bool pack_cmd(CANMessage* msg_, float p_des, float v_des, float kp, float kd, fl
 }
 
 
-bool unpack_reply(CANMessage msg, uint8_t *id_, float *pos_, float *vel_, float *tt_f_){
-    *id_ = msg.data[0];
+bool unpack_reply(CANMessage msg){
+    uint8_t id_ = msg.data[0];
     int p_int = (msg.data[1]<<8) | msg.data[2];
     int v_int = (msg.data[3]<<4) | (msg.data[4]>>4);
     int i_int = ((msg.data[4]&0xF)<<8) | msg.data[5];
     
-    *pos_ = uint_to_float(p_int, P_MIN, P_MAX, 16);
-    *vel_ = uint_to_float(v_int, V_MIN, V_MAX, 12);
-    *tt_f_ = uint_to_float(i_int, T_MIN, T_MAX, 12);
+    // CAN_IDは1から始まる
+    // idによって自動的に振り分けられるようにしたい！
+    motor_->q   = uint_to_float(p_int, P_MIN, P_MAX, 16);
+    motor_->dq[id_-1]  = uint_to_float(v_int, V_MIN, V_MAX, 12);
+    motor_->tau[id_-1] = uint_to_float(i_int, T_MIN, T_MAX, 12);
 
     return true;
 }
