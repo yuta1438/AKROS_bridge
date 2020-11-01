@@ -1,6 +1,7 @@
 /* F303K8にデータを流す */
 #include <ros/ros.h>
 #include <AK80_6.h>
+#include <can_msgs/Frame.h>
 #include <std_msgs/UInt8MultiArray.h>
 #include <std_msgs/UInt8.h>
 #include <AKROS_bridge/motor_cmd_single.h>
@@ -19,6 +20,8 @@ ros::Subscriber enter_motor_control_mode_sub;
 ros::Subscriber exit_motor_control_mode_sub;
 ros::Subscriber reset_position_sub;
 
+// UInt8MultiArray -> can_msgs::Frameに変更したい
+can_msgs::Frame canmessage;
 
 // ROSmsg -> CANMessage
 void ros2can_Cb(const AKROS_bridge::motor_cmd_single& cmd){
