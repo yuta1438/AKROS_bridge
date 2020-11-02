@@ -1,14 +1,10 @@
 // モータの状態をここで管理
-#ifndef MOTOR_STATUS_H
+#ifndef MOTOR_STATUS_H_
 #define MOTOR_STATUS_H_
 
 #include "mbed.h"
-#include <vector>
 
-class motor_status{
-public:
-    motor_status(){}
-    ~motor_status(){};
+typedef struct motor_status_{
     float q;
     float q_ref;
     float dq;
@@ -17,5 +13,5 @@ public:
     float tau_ref;
     float Kp;
     float Kd;
-};
+} motor_status;
 #endif

@@ -1,5 +1,6 @@
-PROJECT         := AKROS_bridge_can_mbed
-DEVICES         := NUCLEO_F446RE
+PROJECT         := AKROS_bridge_mbed
+DEVICES         := NUCLEO_F446RE\
+				   #NUCLEO_F303K8
 GCC4MBED_DIR    := $(GCC4MBED_DIR)
 USER_LIBS       := !$(ROS_LIB_DIR) $(ROS_LIB_DIR)/BufferedSerial\
 					../include

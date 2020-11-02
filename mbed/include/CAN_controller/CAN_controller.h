@@ -3,20 +3,11 @@
 
 #include "mbed.h"
 #include "CAN.h"
-#include "../motor_status/motor_status.h"
+#include <vector>
+#include <motor_status.h>
 #include "config.h"
 #include "../basic_op/basic_op.h"
 
-#define P_MIN   -95.5f
-#define P_MAX   95.5f
-#define V_MIN   -30.0f
-#define V_MAX   30.0f
-#define KP_MIN   0.0f
-#define KP_MAX   500.0f
-#define KD_MIN   0.0f
-#define KD_MAX   5.0f
-#define T_MIN   -18.0f
-#define T_MAX   18.0f
 
 // CAN Settings
 #define CAN_HOST_ID     0
@@ -31,22 +22,31 @@
 #else
 #endif
 
-
 #define CAN_TX_DATA_LENGTH  8
 #define CAN_RX_DATA_LENGTH  6
 
 
-// motor_statusに保存された値を送信&受信データを保存
-namespace CAN_controller{
+class CAN_controller{
+private:
+    CAN can;
+    uint8_t motor_num = 0;
+    
+    bool pack_cmd(CANMessage&);
+    bool unpack_reply(const CANMessage&);
+    
+public:
+    CAN_controller();
+    ~CAN_controller(){};
+    std::vector<motor_status> motor;
+    
+    void attach(void);
+    void can_Cb(void);
+    void can_send(uint8_t);
 
-void enter_control_mode(CAN *can_, uint8_t id_);
-void exit_control_mode(CAN *can_, uint8_t id_);
-void set_position_to_zero(CAN *can_, uint8_t id_);
+    void enter_control_mode(uint8_t id_);
+    void exit_control_mode(uint8_t id_);
+    void set_position_to_zero(uint8_t id_);
 
-// convert motor_cmd to CAN message
-bool pack_cmd(CANMessage* msg_, motor_status motor_);
-
-// convert can_motor_reply to ROSmsg 
-bool unpack_reply(CANMessage msg, motor_status *motor_);
-}
+    
+};
 #endif
