@@ -12,6 +12,7 @@ find_package(catkin REQUIRED COMPONENTS
   std_msgs
   trajectory_msgs
   sensor_msgs
+  can_msgs
   message_generation
 )
 
@@ -22,6 +23,7 @@ add_message_files(
   motor_reply_single.msg
   motor_cmd.msg
   motor_reply.msg
+  can_msg.msg
 )
 
 ## Generate services in the 'srv' folder
@@ -29,6 +31,7 @@ add_service_files(
   FILES
   Initialize.srv
   Initialize_single.srv
+  Initialize_can.srv
 )
 
 ## Generate actions in the 'action' folder
@@ -44,12 +47,13 @@ generate_messages(
   std_msgs
   trajectory_msgs
   sensor_msgs
+  can_msgs
 )
 
 catkin_package(
 #  INCLUDE_DIRS include
 #  LIBRARIES AKROS_bridge
-  CATKIN_DEPENDS message_runtime roscpp rospy std_msgs trajectory_msgs sensor_msgs
+  CATKIN_DEPENDS message_runtime roscpp rospy std_msgs trajectory_msgs sensor_msgs can_msgs
 #  DEPENDS system_lib
 )
 

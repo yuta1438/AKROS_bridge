@@ -7,7 +7,7 @@
             },
             "includePath": [
                 "/usr/include/",
-                "~/ros/lib/ros_lib/",
+                "/opt/ros/melodic/include/",
                 "~/catkin_ws/src/AKROS_bridge/mbed/include/**"
             ],
             "name": "ROS",
