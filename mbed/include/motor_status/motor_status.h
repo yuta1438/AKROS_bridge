@@ -2,8 +2,6 @@
 #ifndef MOTOR_STATUS_H_
 #define MOTOR_STATUS_H_
 
-#include "mbed.h"
-
 typedef struct motor_status_{
     float q;
     float q_ref;

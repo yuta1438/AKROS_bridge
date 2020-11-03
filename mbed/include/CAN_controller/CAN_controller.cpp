@@ -5,6 +5,7 @@ CAN_controller::CAN_controller()
 {
     can.frequency(CAN_FREQ);
     can.attach(callback(this, &CAN_controller::can_Cb));
+    initializeFlag = false;
 }
 
 
@@ -114,8 +115,8 @@ bool CAN_controller::unpack_reply(const CANMessage& msg){
 
     // CAN_IDは1から始まる
     // idによって自動的に振り分けられるようにしたい！
-    motor[id_-1].q   = uint_to_float(((msg.data[1]<<8) | msg.data[2]), P_MIN, P_MAX, 16);
-    motor[id_-1].dq  = uint_to_float(((msg.data[3]<<4) | (msg.data[4]>>4)), V_MIN, V_MAX, 12);
+    motor[id_-1].q   = uint_to_float(((msg.data[1]<<8) | msg.data[2]),       P_MIN, P_MAX, 16);
+    motor[id_-1].dq  = uint_to_float(((msg.data[3]<<4) | (msg.data[4]>>4)),  V_MIN, V_MAX, 12);
     motor[id_-1].tau = uint_to_float((((msg.data[4]&0xF)<<8) | msg.data[5]), T_MIN, T_MAX, 12);
     return true;
 }

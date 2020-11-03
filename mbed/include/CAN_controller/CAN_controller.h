@@ -38,6 +38,8 @@ public:
     CAN_controller();
     ~CAN_controller(){};
     std::vector<motor_status> motor;
+
+    bool initializeFlag;
     
     void attach(void);
     void can_Cb(void);

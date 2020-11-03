@@ -12,13 +12,13 @@ int main(void){
     ros::NodeHandle nh;
     nh.getHardware()->setBaud(115200);
     nh.initNode();
-    
+
     AKROS_bridge_class akros(&nh);
-    wait_ms(1000);
+    wait_ms(500);
 
     while(1){
         akros.loop();
         nh.spinOnce();
-        wait_ms(20);    // 早すぎるとダメ
+        wait_ms(10);    // 早すぎるとダメ
     }
 }

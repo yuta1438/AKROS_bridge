@@ -35,23 +35,37 @@ void AKROS_bridge_class::motor_cmd_Cb(const AKROS_bridge::motor_cmd& cmd_){
 
 void AKROS_bridge_class::enter_control_mode_Cb(const AKROS_bridge::Initialize::Request& req_, AKROS_bridge::Initialize::Response& res_){
     motor_num = req_.joint_num;
+
+    // responseのjointstateに対するメモリ動的確保
     res_.jointstate.position_length = motor_num;
     res_.jointstate.velocity_length = motor_num;
     res_.jointstate.effort_length   = motor_num;
-
     res_.jointstate.position = (double *)malloc(sizeof(double) * motor_num);
     res_.jointstate.velocity = (double *)malloc(sizeof(double) * motor_num);
     res_.jointstate.effort   = (double *)malloc(sizeof(double) * motor_num);
 
+    // motor_reply_msgのjointstateに対するメモリ動的確保
+    motor_reply_msg.state.position_length = motor_num;
+    motor_reply_msg.state.velocity_length = motor_num;
+    motor_reply_msg.state.effort_length   = motor_num;
+    motor_reply_msg.state.position = (double *)malloc(sizeof(double) * motor_num);
+    motor_reply_msg.state.velocity = (double *)malloc(sizeof(double) * motor_num);
+    motor_reply_msg.state.effort   = (double *)malloc(sizeof(double) * motor_num);
+
     can_controller.motor.resize(motor_num);
-    // can_controller.attach();
+
+    for(uint8_t i=0; i<motor_num; i++){
+        res_.jointstate.position[i] = 0.0;
+        res_.jointstate.velocity[i] = 0.0;
+        res_.jointstate.effort[i] = 0.0;
+    }
 
 
     // モータにenter_control_modeを送信
     for(uint8_t i=0; i<motor_num; i++){
         CANMessage msg_;
         can_controller.enter_control_mode(i+1);
-        wait_ms(10);
+        wait_ms(50);
     }
 
     wait_ms(500);
@@ -63,13 +77,14 @@ void AKROS_bridge_class::enter_control_mode_Cb(const AKROS_bridge::Initialize::R
         res_.jointstate.effort[i]   = can_controller.motor[i].tau;
     }
 
+    can_controller.initializeFlag = true;
     myled = 1;
 }
 
 
 // exit control mode of motor-1
 void AKROS_bridge_class::exit_control_mode_Cb(const std_srvs::Empty::Request& req_, std_srvs::Empty::Response& res_){
-    for(int i=0; i<motor_num; i++){
+    for(uint8_t i=0; i<motor_num; i++){
         can_controller.exit_control_mode(i+1);
         wait_ms(10);
     }
@@ -79,7 +94,7 @@ void AKROS_bridge_class::exit_control_mode_Cb(const std_srvs::Empty::Request& re
 
 // set the angle of motor-1 to zero
 void AKROS_bridge_class::set_zero_pos_Cb(const std_srvs::Empty::Request& req_, std_srvs::Empty::Response& res_){
-    for(int i=0; i<motor_num; i++){
+    for(uint8_t i=0; i<motor_num; i++){
         can_controller.set_position_to_zero(i+1);
         wait_ms(10);
     }
@@ -95,9 +110,15 @@ uint8_t AKROS_bridge_class::getMotorNum(void){
 // motor_replyをPublish
 // can_cmdを送信
 void AKROS_bridge_class::loop(void){
-    motor_status_pub.publish(&motor_reply_msg);
-    
-    for(uint8_t i=0; i<motor_num; i++){
-        can_controller.can_send(i);
+    if(can_controller.initializeFlag){
+        for(uint8_t i=0; i<motor_num; i++){
+            __disable_irq();
+            can_controller.can_send(i);
+            __enable_irq();
+            motor_reply_msg.state.position[i] = can_controller.motor[i].q;
+            motor_reply_msg.state.velocity[i] = can_controller.motor[i].dq;
+            motor_reply_msg.state.effort[i]   = can_controller.motor[i].tau;
+        }
+        motor_status_pub.publish(&motor_reply_msg);
     }
 }
