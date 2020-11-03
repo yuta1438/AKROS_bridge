@@ -1,0 +1,17 @@
+<launch>
+    <arg name="record_mode" default="false"/>
+    <arg name="rosbag_name"/>
+
+    <group if="$(arg record_mode)">
+        <node pkg="rosbag" type="record" name="recorder"
+              args="-O $(find AKROS_bridge)/rosbag/$(arg rosbag_name) -a"/>
+    </group>
+
+    <node pkg="rqt_plot" type="rqt_plot" name="position_plot"
+            args="/cmd/motor_cmd/cmd/positions[0] 
+                  /cmd/motor_cmd/cmd/positions[1] 
+                  /reply/motor_status/state/position[0]
+                  /reply/motor_status/state/position[1]"/>
+
+    <node pkg="AKROS_bridge" type="motor_controller" name="motor_controller"/>
+</launch>
