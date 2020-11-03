@@ -1,2 +1,1 @@
-Header header
 sensor_msgs/JointState state
