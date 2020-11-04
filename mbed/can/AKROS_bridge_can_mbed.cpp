@@ -7,8 +7,8 @@
 #include <ros.h>
 #include <mbed.h>
 #include <vector>
-#include <AKROS_bridge/Initialize_can.h>
-#include <AKROS_bridge/can_msg.h>
+#include <AKROS_bridge_msgs/Initialize_can.h>
+#include <AKROS_bridge_msgs/can_msg.h>
 #include <config.h>
 
 // CAN Settings
@@ -34,21 +34,19 @@ uint8_t motor_num = 0;
 std::vector<CANMessage> can_motor_reply;
 std::vector<CANMessage> can_motor_cmd;
 
-AKROS_bridge::can_msg can_reply_msg;
-
 
 // ROS側から受け取ったメッセージをそのままモータに流す
-void motor_can_Cb(const AKROS_bridge::can_msg&);
+void motor_can_Cb(const AKROS_bridge_msgs::can_msg&);
 void can_Cb(void);
-void initialize_Cb(const AKROS_bridge::Initialize_can::Request&, AKROS_bridge::Initialize_can::Response&);
+void initialize_Cb(const AKROS_bridge_msgs::Initialize_can::Request&, AKROS_bridge_msgs::Initialize_can::Response&);
 
 
 // ROS
 ros::NodeHandle nh;
-AKROS_bridge::can_msg can_reply;
-ros::Publisher can_reply_pub("can_motor_reply", &can_reply);
-ros::Subscriber<AKROS_bridge::can_msg> can_cmd_sub("can_motor_cmd", &motor_can_Cb);
-ros::ServiceServer<AKROS_bridge::Initialize_can::Request, AKROS_bridge::Initialize_can::Response> initialize_srv("initialize", &initialize_Cb);
+AKROS_bridge_msgs::can_msg can_reply_msg;
+ros::Publisher can_reply_pub("can_motor_reply", &can_reply_msg);
+ros::Subscriber<AKROS_bridge_msgs::can_msg> can_cmd_sub("can_motor_cmd", &motor_can_Cb);
+ros::ServiceServer<AKROS_bridge_msgs::Initialize_can::Request, AKROS_bridge_msgs::Initialize_can::Response> initialize_srv("initialize", &initialize_Cb);
 
 
 int main(void){
@@ -76,7 +74,7 @@ int main(void){
 
 
 // ROS側からcmdを受け取ってモータに送信
-void motor_can_Cb(const AKROS_bridge::can_msg& msg_){
+void motor_can_Cb(const AKROS_bridge_msgs::can_msg& msg_){
     for(uint8_t i=0; i<msg_.can_cmd_length; i++){
         can_motor_cmd[i].id = msg_.can_cmd[i].id;
         for(uint8_t j=0; j<CAN_TX_DATA_LENGTH; j++){
@@ -101,7 +99,7 @@ void can_Cb(void){
 
 
 // srvのコールバック関数
-void initialize_Cb(const AKROS_bridge::Initialize_can::Request& req_, AKROS_bridge::Initialize_can::Response& res_){
+void initialize_Cb(const AKROS_bridge_msgs::Initialize_can::Request& req_, AKROS_bridge_msgs::Initialize_can::Response& res_){
     motor_num = req_.joint_num;
     can_motor_cmd.resize(motor_num);
     can_motor_reply.resize(motor_num);

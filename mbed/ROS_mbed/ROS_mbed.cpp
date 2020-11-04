@@ -5,7 +5,7 @@
 
 
 // #include <mbed.h>
-#include <AKROS_bridge_class.h>
+#include <AKROS_bridge.h>
 
 
 int main(void){
@@ -13,7 +13,7 @@ int main(void){
     nh.getHardware()->setBaud(115200);
     nh.initNode();
 
-    AKROS_bridge_class akros(&nh);
+    AKROS_bridge akros(&nh);
     wait_ms(500);
 
     while(1){

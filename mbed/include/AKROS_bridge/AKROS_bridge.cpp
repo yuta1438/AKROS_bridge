@@ -1,12 +1,12 @@
-#include <AKROS_bridge_class.h>
+#include <AKROS_bridge.h>
 
-AKROS_bridge_class::AKROS_bridge_class(ros::NodeHandle* n_)
+AKROS_bridge::AKROS_bridge(ros::NodeHandle* n_)
   : myled(LED1),
     motor_status_pub("/reply/motor_status", &motor_reply_msg),
-    motor_cmd_sub("/cmd/motor_cmd", &AKROS_bridge_class::motor_cmd_Cb, this),
-    enter_control_mode_srv("/cmd/enter_control_mode", &AKROS_bridge_class::enter_control_mode_Cb, this),
-    exit_control_mode_srv("/cmd/exit_control_mode", &AKROS_bridge_class::exit_control_mode_Cb, this),
-    set_zero_pos_srv("/cmd/set_zero_pos", &AKROS_bridge_class::set_zero_pos_Cb, this)
+    motor_cmd_sub("/cmd/motor_cmd", &AKROS_bridge::motor_cmd_Cb, this),
+    enter_control_mode_srv("/cmd/enter_control_mode", &AKROS_bridge::enter_control_mode_Cb, this),
+    exit_control_mode_srv("/cmd/exit_control_mode", &AKROS_bridge::exit_control_mode_Cb, this),
+    set_zero_pos_srv("/cmd/set_zero_pos", &AKROS_bridge::set_zero_pos_Cb, this)
 {
     wait_ms(10);
     nh_priv = n_;
@@ -22,7 +22,7 @@ AKROS_bridge_class::AKROS_bridge_class(ros::NodeHandle* n_)
 }
 
 
-void AKROS_bridge_class::motor_cmd_Cb(const AKROS_bridge::motor_cmd& cmd_){
+void AKROS_bridge::motor_cmd_Cb(const AKROS_bridge_msgs::motor_cmd& cmd_){
     for(uint8_t i=0; i<motor_num; i++){
         can_controller.motor[i].q_ref   = cmd_.cmd.positions[i];
         can_controller.motor[i].dq_ref  = cmd_.cmd.velocities[i];
@@ -33,7 +33,7 @@ void AKROS_bridge_class::motor_cmd_Cb(const AKROS_bridge::motor_cmd& cmd_){
 }
 
 
-void AKROS_bridge_class::enter_control_mode_Cb(const AKROS_bridge::Initialize::Request& req_, AKROS_bridge::Initialize::Response& res_){
+void AKROS_bridge::enter_control_mode_Cb(const AKROS_bridge_msgs::Initialize::Request& req_, AKROS_bridge_msgs::Initialize::Response& res_){
     motor_num = req_.joint_num;
 
     // responseのjointstateに対するメモリ動的確保
@@ -83,7 +83,7 @@ void AKROS_bridge_class::enter_control_mode_Cb(const AKROS_bridge::Initialize::R
 
 
 // exit control mode of motor-1
-void AKROS_bridge_class::exit_control_mode_Cb(const std_srvs::Empty::Request& req_, std_srvs::Empty::Response& res_){
+void AKROS_bridge::exit_control_mode_Cb(const std_srvs::Empty::Request& req_, std_srvs::Empty::Response& res_){
     for(uint8_t i=0; i<motor_num; i++){
         can_controller.exit_control_mode(i+1);
         wait_ms(10);
@@ -93,7 +93,7 @@ void AKROS_bridge_class::exit_control_mode_Cb(const std_srvs::Empty::Request& re
 
 
 // set the angle of motor-1 to zero
-void AKROS_bridge_class::set_zero_pos_Cb(const std_srvs::Empty::Request& req_, std_srvs::Empty::Response& res_){
+void AKROS_bridge::set_zero_pos_Cb(const std_srvs::Empty::Request& req_, std_srvs::Empty::Response& res_){
     for(uint8_t i=0; i<motor_num; i++){
         can_controller.set_position_to_zero(i+1);
         wait_ms(10);
@@ -101,7 +101,7 @@ void AKROS_bridge_class::set_zero_pos_Cb(const std_srvs::Empty::Request& req_, s
 }
 
 
-uint8_t AKROS_bridge_class::getMotorNum(void){
+uint8_t AKROS_bridge::getMotorNum(void){
     return motor_num;
 }
 
@@ -109,7 +109,7 @@ uint8_t AKROS_bridge_class::getMotorNum(void){
 // メインで回す部分
 // motor_replyをPublish
 // can_cmdを送信
-void AKROS_bridge_class::loop(void){
+void AKROS_bridge::loop(void){
     if(can_controller.initializeFlag){
         for(uint8_t i=0; i<motor_num; i++){
             __disable_irq();

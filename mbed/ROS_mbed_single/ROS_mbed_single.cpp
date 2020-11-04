@@ -12,9 +12,9 @@
 #include <ros.h>
 #include <std_srvs/Empty.h>
 #include <motor_status/motor_status.h>
-#include <AKROS_bridge/Initialize_single.h>
-#include <AKROS_bridge/motor_cmd_single.h>
-#include <AKROS_bridge/motor_reply_single.h>
+#include <AKROS_bridge_msgs/Initialize_single.h>
+#include <AKROS_bridge_msgs/motor_cmd_single.h>
+#include <AKROS_bridge_msgs/motor_reply_single.h>
 #include <CAN_controller/CAN_controller.h>
 
 
@@ -40,11 +40,11 @@ DigitalOut myled(LED1);
 void CAN_Cb(void);
 
 // ROS側から受け取ったメッセージをそのままモータに流す
-void motor_cmd_Cb(const AKROS_bridge::motor_cmd_single&);
+void motor_cmd_Cb(const AKROS_bridge_msgs::motor_cmd_single&);
 
 // 初期化関係はservice通信で行う
-void enter_control_mode_Cb(const AKROS_bridge::Initialize_single::Request&, AKROS_bridge::Initialize_single::Response&);
-void exit_control_mode_Cb(const AKROS_bridge::Initialize_single::Request&, AKROS_bridge::Initialize_single::Response&);
+void enter_control_mode_Cb(const AKROS_bridge_msgs::Initialize_single::Request&, AKROS_bridge_msgs::Initialize_single::Response&);
+void exit_control_mode_Cb(const AKROS_bridge_msgs::Initialize_single::Request&, AKROS_bridge_msgs::Initialize_single::Response&);
 void set_zero_pos_Cb(const std_srvs::Empty::Request&, std_srvs::Empty::Response&);
 
 
@@ -53,10 +53,10 @@ ros::NodeHandle nh;
 AKROS_bridge::motor_reply_single motor_reply;
 
 ros::Publisher motor_reply_pub("motor_reply", &motor_reply);
-ros::Subscriber<AKROS_bridge::motor_cmd_single> motor_cmd_sub("motor_cmd", &motor_cmd_Cb);
+ros::Subscriber<AKROS_bridge_msgs::motor_cmd_single> motor_cmd_sub("motor_cmd", &motor_cmd_Cb);
 
-ros::ServiceServer<AKROS_bridge::Initialize_single::Request, AKROS_bridge::Initialize_single::Response> enter_control_mode_srv("enter_control_mode", &enter_control_mode_Cb);
-ros::ServiceServer<AKROS_bridge::Initialize_single::Request, AKROS_bridge::Initialize_single::Response> exit_control_mode_srv("exit_control_mode", &exit_control_mode_Cb);
+ros::ServiceServer<AKROS_bridge_msgs::Initialize_single::Request, AKROS_bridge_msgs::Initialize_single::Response> enter_control_mode_srv("enter_control_mode", &enter_control_mode_Cb);
+ros::ServiceServer<AKROS_bridge_msgs::Initialize_single::Request, AKROS_bridge_msgs::Initialize_single::Response> exit_control_mode_srv("exit_control_mode", &exit_control_mode_Cb);
 ros::ServiceServer<std_srvs::Empty::Request, std_srvs::Empty::Response> set_zero_pos_srv("set_position_zero", &set_zero_pos_Cb);
 
 
@@ -86,7 +86,7 @@ int main(void){
 
 
 // ROS_topicの内容をCANMessageにコピー
-void motor_cmd_Cb(const AKROS_bridge::motor_cmd_single& cmd_){
+void motor_cmd_Cb(const AKROS_bridge_msgs::motor_cmd_single& cmd_){
     CANMessage msg_;
     msg_.id = cmd_.id + 1;  // MotorのCAN_IDは1から始まるので注意！
     CAN_controller::pack_cmd(&msg_, cmd_.position, cmd_.velocity, cmd_.Kp, cmd_.Kd, cmd_.torque);
@@ -114,7 +114,7 @@ void CAN_Cb(void){
 }
 
 // enter control mode of one motor
-void enter_control_mode_Cb(const AKROS_bridge::Initialize_single::Request& req_, AKROS_bridge::Initialize_single::Response& res_){
+void enter_control_mode_Cb(const AKROS_bridge_msgs::Initialize_single::Request& req_, AKROS_bridge_msgs::Initialize_single::Response& res_){
     CANMessage msg_;
     CAN_controller::enter_control_mode(&can, MOTOR_ID);
     wait_ms(100);
@@ -138,7 +138,7 @@ void enter_control_mode_Cb(const AKROS_bridge::Initialize_single::Request& req_,
 }
 
 // exit control mode of motor-1
-void exit_control_mode_Cb(const AKROS_bridge::Initialize_single::Request& req_, AKROS_bridge::Initialize_single::Response& res_){
+void exit_control_mode_Cb(const AKROS_bridge_msgs::Initialize_single::Request& req_, AKROS_bridge_msgs::Initialize_single::Response& res_){
     CANMessage msg_;
     CAN_controller::exit_control_mode(&can, MOTOR_ID);
     

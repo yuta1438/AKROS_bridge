@@ -1,13 +1,14 @@
-/* F303K8にデータを流す */
+// STMマイコンにCANMessageのtopicを流す
+
 #include <ros/ros.h>
 #include <vector>
-#include <AK80_6.h>
+#include <can_controller.h>
 #include <can_msgs/Frame.h>
 #include <AKROS_bridge/Initialize.h>
 #include <AKROS_bridge/motor_cmd.h>
 #include <AKROS_bridge/motor_reply.h>
 #include <std_srvs/Empty.h>
-/*
+
 std::vector<can_msgs::Frame> can_msg;
 
 // from ROS to STM
@@ -126,6 +127,4 @@ int main(int argc, char** argv){
     }
 
     return 0;
-}*/
-
-int main(int argc, char** argv){}
+}
