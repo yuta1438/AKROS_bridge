@@ -1,0 +1,16 @@
+<?xml version="1.0"?>
+<package format="2">
+  <name>AKROS_bridge</name>
+  <version>0.0.0</version>
+  <description>
+    ROS package for AKROS_bridge (meta package)
+  </description>
+  <maintainer email="fal@todo.todo">fal</maintainer>
+  <license>TODO</license>
+  <buildtool_depend>catkin</buildtool_depend>
+  <exec_depend>AKROS_bridge_can</exec_depend>
+  <exec_depend>AKROS_bridge_msgs</exec_depend>
+  <exec_depend>AKROS_bridge_ros</exec_depend>
+  <exec_depend>AKROS_bridge_controller</exec_depend>
+  <export><metapackage/></export>
+</package>

@@ -2,9 +2,9 @@
 
 #include <iostream>
 #include <ros/ros.h>
-#include <AKROS_bridge/motor_cmd_single.h>
-#include <AKROS_bridge/motor_reply_single.h>
-#include <AKROS_bridge/Initialize_single.h>
+#include <AKROS_bridge_msgs/motor_cmd_single.h>
+#include <AKROS_bridge_msgs/motor_reply_single.h>
+#include <AKROS_bridge_msgs/Initialize_single.h>
 
 
 static const double endTime = 15.0; // [s]
@@ -15,8 +15,8 @@ static const double amplitude = M_PI / 2;   //[rad]
 ros::Publisher cmd_pub;
 ros::ServiceClient initialize_client, finalize_client;
 
-AKROS_bridge::motor_cmd_single cmd;
-AKROS_bridge::Initialize_single initialize_srv, finalize_srv;
+AKROS_bridge_msgs::motor_cmd_single cmd;
+AKROS_bridge_msgs::Initialize_single initialize_srv, finalize_srv;
 
 
 int main(int argc, char** argv){
@@ -24,7 +24,7 @@ int main(int argc, char** argv){
     ros::NodeHandle nh;
     ros::Rate loop_rate(control_frequency);
 
-    cmd_pub = nh.advertise<AKROS_bridge::motor_cmd_single>("motor_cmd", 2);
+    cmd_pub = nh.advertise<AKROS_bridge_msgs::motor_cmd_single>("motor_cmd", 2);
     
     // 若干のdelayを入れないとCANメッセージが届かない！！！
     // 初回だけcan_motor_cmdが二回送信される...

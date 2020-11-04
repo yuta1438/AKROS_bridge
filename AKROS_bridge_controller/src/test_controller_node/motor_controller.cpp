@@ -2,12 +2,12 @@
 
 #include <iostream>
 #include <ros/ros.h>
-#include <AKROS_bridge/motor_cmd.h>
-#include <AKROS_bridge/motor_reply.h>
-#include <AKROS_bridge/Initialize.h>
+#include <AKROS_bridge_msgs/motor_cmd.h>
+#include <AKROS_bridge_msgs/motor_reply.h>
+#include <AKROS_bridge_msgs/Initialize.h>
 #include <std_srvs/Empty.h>
 
-#define MOTOR_NUM   2
+#define MOTOR_NUM   2   // モータ数を指定
 
 static const double endTime = 15.0; // [s]
 static const double control_frequency = 50.0;  // [Hz]
@@ -19,8 +19,8 @@ static const double amplitude[2] = {M_PI/2, M_PI/4};   //[rad]
 ros::Publisher cmd_pub; // Publisher
 ros::ServiceClient initialize_client, finalize_client;  // client
 
-AKROS_bridge::motor_cmd cmd_msg;    // Publish_msg
-AKROS_bridge::Initialize initialize_srv;  // client_srv
+AKROS_bridge_msgs::motor_cmd cmd_msg;    // Publish_msg
+AKROS_bridge_msgs::Initialize initialize_srv;  // client_srv
 std_srvs::Empty finalize_srv;
 
 
@@ -29,9 +29,9 @@ int main(int argc, char** argv){
     ros::NodeHandle nh;
     ros::Rate loop_rate(control_frequency);
 
-    initialize_client = nh.serviceClient<AKROS_bridge::Initialize>("/cmd/enter_control_mode");
+    initialize_client = nh.serviceClient<AKROS_bridge_msgs::Initialize>("/cmd/enter_control_mode");
     finalize_client = nh.serviceClient<std_srvs::Empty>("/cmd/exit_control_mode");
-    cmd_pub = nh.advertise<AKROS_bridge::motor_cmd>("/cmd/motor_cmd", 2);
+    cmd_pub = nh.advertise<AKROS_bridge_msgs::motor_cmd>("/cmd/motor_cmd", 2);
     
     // 若干のdelayを入れないとCANメッセージが届かない！！！
     // 初回だけcan_motor_cmdが二回送信される...
