@@ -1,3 +1,8 @@
+/**
+ * 基礎的な計算を行うライブラリ
+ * 
+**/
+
 #ifndef BASIC_OP_H_
 #define BASIC_OP_H_
 

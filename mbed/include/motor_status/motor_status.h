@@ -1,4 +1,4 @@
-// モータの状態をここで管理
+// モータの状態を構造体によって管理する
 #ifndef MOTOR_STATUS_H_
 #define MOTOR_STATUS_H_
 

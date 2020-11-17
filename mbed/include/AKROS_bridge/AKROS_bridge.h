@@ -1,5 +1,5 @@
-#ifndef AKROS_BRIDGE_CLASS_H_
-#define AKROS_BRIDGE_CLASS_H_
+#ifndef AKROS_BRIDGE_H_
+#define AKROS_BRIDGE_H_
 
 #include <mbed.h>
 #include <vector>

@@ -13,7 +13,7 @@ int main(void){
     nh.getHardware()->setBaud(115200);
     nh.initNode();
 
-    AKROS_bridge akros(&nh);
+    AKROS_bridge akros(&nh);    // インスタンス生成．NodeHandleのアドレスを渡す．
     wait_ms(500);
 
     while(1){

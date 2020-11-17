@@ -1,5 +1,6 @@
 #include "CAN_controller.h"
 
+// Constructor
 CAN_controller::CAN_controller()
   : can(CAN_RX_PIN, CAN_TX_PIN)
 {
@@ -30,6 +31,8 @@ void CAN_controller::can_send(uint8_t id_){
 }
 
 
+// enter control mode(モータコントロールモードに入る)
+// モータを制御するためには必須！
 void CAN_controller::enter_control_mode(uint8_t id_){
     CANMessage msg_;
     msg_.id = id_;
@@ -79,11 +82,11 @@ void CAN_controller::set_position_to_zero(uint8_t id_){
     msg_.data[7] = 0xFE;
     
     if(can.write(msg_)){
-        // pc.printf("Set the current motor position to zero \r\n");
+        // pc.printf("Set the current motor position to zero \r\n");    // Debug
     }
 }
 
-
+// motor_statusの目標値をCANMessageにセット
 // この関数を呼び出す前に必ずIDを設定しておくこと！
 bool CAN_controller::pack_cmd(CANMessage& msg_){
     // Set Limit 
@@ -108,8 +111,9 @@ bool CAN_controller::pack_cmd(CANMessage& msg_){
 }
 
 
-// CANMessageのIDに対応したmotor_statusに格納
-// motor_status_vectorの実体が見える必要がある．
+// CANMessageのIDに対応したmotor_statusにデータ(can_reply_msg)を格納
+// CANMessageの値はデジタル値なのでアナログ値に変換して格納する
+// motor_status_vectorの実体が見える必要あり
 bool CAN_controller::unpack_reply(const CANMessage& msg){
     uint8_t id_ = msg.data[0];
 
