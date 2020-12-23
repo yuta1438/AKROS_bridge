@@ -9,7 +9,8 @@
                 "${ROS_LIB_DIR}",
                 "~/catkin_ws/src/AKROS_bridge/mbed/include",
                 "/opt/ros/melodic/include",
-                "~/catkin_ws/AKROS_bridge"
+                "~/catkin_ws/src/AKROS_bridge",
+                "${workspaceFolder}/include"
             ],
             "name": "AKROS_bridge_mbed",
             "intelliSenseMode": "gcc-x64",

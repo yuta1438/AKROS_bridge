@@ -4,7 +4,7 @@
 #include "mbed.h"
 #include "CAN.h"
 #include <vector>
-#include <motor_status.h>
+#include <motor_status/motor_status.h>
 #include "config.h"
 #include "../basic_op/basic_op.h"
 

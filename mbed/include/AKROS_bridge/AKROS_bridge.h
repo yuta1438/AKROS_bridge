@@ -5,6 +5,7 @@
 #include <vector>
 #include <ros.h>
 
+#include <config.h>
 #include <std_srvs/Empty.h>
 #include <AKROS_bridge_msgs/motor_cmd.h>
 #include <AKROS_bridge_msgs/motor_reply.h>
@@ -16,11 +17,15 @@
 class AKROS_bridge{
 private:
     // variables
-    AKROS_bridge_msgs::motor_reply   motor_reply_msg;
-    uint8_t motor_num = 0;
+    AKROS_bridge_msgs::motor_reply   motor_reply_msg;   // ROSにモータの状態を返すmsg
+    uint8_t motor_num = 0;  // モータの個数
+
     // Objects
-    DigitalOut  myled;
-    CAN_controller can_controller;
+    DigitalOut  myled;  // Nucleo上のLED
+    DigitalIn   tweak_toggle;   // 微調節モード用のトグルスイッチ
+    DigitalIn   tweak_tact_up, tweak_tact_down; // 微調節モード用のタクトスイッチ
+
+    CAN_controller can_controller;  // CAN通信に関するクラス
     
     // Pubs,Subs,Srvs
     ros::NodeHandle *nh_priv;

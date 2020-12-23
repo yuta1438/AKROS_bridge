@@ -43,12 +43,24 @@ int main(int argc, char** argv){
     
     float q_init[MOTOR_NUM];
 
-    for(uint8_t i=0; i<MOTOR_NUM; i++){
-        q_init[i] = initialize_srv.response.jointstate.position[i];
-        ROS_INFO("pos %d : %f", i, initialize_srv.response.jointstate.position[i]);
-        ROS_INFO("vel %d : %f", i, initialize_srv.response.jointstate.velocity[i]);
-        ROS_INFO("eff %d : %f", i, initialize_srv.response.jointstate.effort[i]);
+    std::cout << argv[1] << std::endl;
+
+
+    /* PCにマイコンを接続しないとコアダンプが起こる(空データ参照) */
+    /* テストしたいときに困るので引数つきで実行したらココをスルーするようにしたい */
+    if(argc != 1){
+        if(argv[1] == "debug"){
+            for(uint8_t i=0; i<MOTOR_NUM; i++){
+                q_init[i] = initialize_srv.response.jointstate.position[i];
+                ROS_INFO("pos %d : %f", i, initialize_srv.response.jointstate.position[i]);
+                ROS_INFO("vel %d : %f", i, initialize_srv.response.jointstate.velocity[i]);
+                ROS_INFO("eff %d : %f", i, initialize_srv.response.jointstate.effort[i]);
+            }
+        }
     }
+
+    q_init[0] = 0.0;
+    q_init[1] = 0.0;
     
     // resize
     cmd_msg.cmd.positions.resize(MOTOR_NUM);
@@ -67,6 +79,8 @@ int main(int argc, char** argv){
     cmd_msg.Kd[1] = 0.5;
     cmd_msg.cmd.effort[0] = 0.0;
     cmd_msg.cmd.effort[1] = 0.0;
+
+    ROS_INFO("controller start!");
 
     ros::Time t_start = ros::Time::now();
     

@@ -2,6 +2,9 @@
 
 AKROS_bridge::AKROS_bridge(ros::NodeHandle* n_)
   : myled(LED1),
+    tweak_toggle(TWEAK_TOGGLE_PIN),
+    tweak_tact_up(TWEAK_TACT_UP_PIN),
+    tweak_tact_up(TWEAK_TACT_DOWN_PIN),
     motor_status_pub("/reply/motor_status", &motor_reply_msg),
     motor_cmd_sub("/cmd/motor_cmd", &AKROS_bridge::motor_cmd_Cb, this),
     enter_control_mode_srv("/cmd/enter_control_mode", &AKROS_bridge::enter_control_mode_Cb, this),
@@ -12,6 +15,7 @@ AKROS_bridge::AKROS_bridge(ros::NodeHandle* n_)
     nh_priv = n_;
     myled = 0;
     
+    // 各種トピック，サービスの設定
     nh_priv->advertise(motor_status_pub);
     nh_priv->subscribe(motor_cmd_sub);
     nh_priv->advertiseService(enter_control_mode_srv);
@@ -22,6 +26,8 @@ AKROS_bridge::AKROS_bridge(ros::NodeHandle* n_)
 }
 
 
+// モータ指令トピックに対するsubscriberのコールバック関数
+// 指令を受け取ったらcan_controllerクラスのメンバ変数（motor）に格納
 void AKROS_bridge::motor_cmd_Cb(const AKROS_bridge_msgs::motor_cmd& cmd_){
     for(uint8_t i=0; i<motor_num; i++){
         can_controller.motor[i].q_ref   = cmd_.cmd.positions[i];
@@ -32,7 +38,7 @@ void AKROS_bridge::motor_cmd_Cb(const AKROS_bridge_msgs::motor_cmd& cmd_){
     }
 }
 
-
+// モータ起動サービスに対するserverのコールバック関数
 void AKROS_bridge::enter_control_mode_Cb(const AKROS_bridge_msgs::Initialize::Request& req_, AKROS_bridge_msgs::Initialize::Response& res_){
     motor_num = req_.joint_num;
 
@@ -52,12 +58,13 @@ void AKROS_bridge::enter_control_mode_Cb(const AKROS_bridge_msgs::Initialize::Re
     motor_reply_msg.state.velocity = (double *)malloc(sizeof(double) * motor_num);
     motor_reply_msg.state.effort   = (double *)malloc(sizeof(double) * motor_num);
 
+    // モータの数に合わせて動的に確保
     can_controller.motor.resize(motor_num);
 
     for(uint8_t i=0; i<motor_num; i++){
         res_.jointstate.position[i] = 0.0;
         res_.jointstate.velocity[i] = 0.0;
-        res_.jointstate.effort[i] = 0.0;
+        res_.jointstate.effort[i]   = 0.0;
     }
 
 
@@ -82,7 +89,7 @@ void AKROS_bridge::enter_control_mode_Cb(const AKROS_bridge_msgs::Initialize::Re
 }
 
 
-// exit control mode of motor-1
+// モータ終了サービスに対するserverのコールバック関数
 void AKROS_bridge::exit_control_mode_Cb(const std_srvs::Empty::Request& req_, std_srvs::Empty::Response& res_){
     for(uint8_t i=0; i<motor_num; i++){
         can_controller.exit_control_mode(i+1);
@@ -92,7 +99,7 @@ void AKROS_bridge::exit_control_mode_Cb(const std_srvs::Empty::Request& req_, st
 }
 
 
-// set the angle of motor-1 to zero
+// 原点設定サービスに対するserverのコールバック関数
 void AKROS_bridge::set_zero_pos_Cb(const std_srvs::Empty::Request& req_, std_srvs::Empty::Response& res_){
     for(uint8_t i=0; i<motor_num; i++){
         can_controller.set_position_to_zero(i+1);
@@ -101,14 +108,16 @@ void AKROS_bridge::set_zero_pos_Cb(const std_srvs::Empty::Request& req_, std_srv
 }
 
 
+// モータの個数を返す
+// モータの個数は「enter_control_mode」サービスのrequestで設定する必要あり
 uint8_t AKROS_bridge::getMotorNum(void){
     return motor_num;
 }
 
 
 // メインで回す部分
-// motor_replyをPublish
-// can_cmdを送信
+// PCにmotor_replyをPublish
+// モータにcan_cmdを送信
 void AKROS_bridge::loop(void){
     if(can_controller.initializeFlag){
         for(uint8_t i=0; i<motor_num; i++){
