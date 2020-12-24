@@ -4,16 +4,9 @@
 // System Configurations
 #define ROS_FREQ        100 //[Hz]
 
-// STM_Board
-#define NUCLEO_F303K8   0
-#define NUCLEO_F446RE   1
-
-// select your target board
-#define TARGET_BOARD    NUCLEO_F446RE
-//#define TARGET_BOARD    NUCLEO_F303K8
-
-
 // Pin Settings
+#define CAN_RX_PIN  PB_8
+#define CAN_TX_PIN  PB_9
 #define TWEAK_TOGGLE_PIN     D7
 #define TWEAK_TACT_UP_PIN    D8
 #define TWEAK_TACT_DOWN_PIN  D9

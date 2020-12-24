@@ -3,13 +3,13 @@
 #define MOTOR_STATUS_H_
 
 typedef struct motor_status_{
-    float q;
-    float q_ref;
-    float dq;
-    float dq_ref;
-    float tau;
-    float tau_ref;
-    float Kp;
-    float Kd;
+    uint8_t position;
+    uint8_t position_ref;
+    uint8_t velocity;
+    uint8_t velocity_ref;
+    uint8_t effort;
+    uint8_t effort_ref;
+    uint8_t Kp;
+    uint8_t Kd;
 } motor_status;
 #endif

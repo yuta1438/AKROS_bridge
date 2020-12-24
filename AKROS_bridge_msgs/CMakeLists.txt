@@ -8,11 +8,9 @@ project(AKROS_bridge_msgs)
 ## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS xyz)
 ## is used, also find other catkin packages
 find_package(catkin REQUIRED COMPONENTS
-  can_msgs
   sensor_msgs
   std_msgs
   std_srvs
-  trajectory_msgs
   message_generation
 )
 
@@ -53,18 +51,17 @@ find_package(catkin REQUIRED COMPONENTS
 add_message_files(
   FILES
   motor_cmd_single.msg
-  motor_reply_single.msg
   motor_cmd.msg
-  motor_reply.msg
-  can_msg.msg
+  motor_can_cmd.msg
+  motor_can_cmd_single.msg
+  motor_can_reply.msg
+  motor_can_reply_single.msg
 )
 
 ## Generate services in the 'srv' folder
 add_service_files(
   FILES
   Initialize.srv
-  Initialize_single.srv
-  Initialize_can.srv
 )
 
 ## Generate actions in the 'action' folder
@@ -77,10 +74,8 @@ add_service_files(
 ## Generate added messages and services with any dependencies listed here
 generate_messages(
   DEPENDENCIES
-  can_msgs
   sensor_msgs
   std_msgs
-  trajectory_msgs
 )
 
 ################################################

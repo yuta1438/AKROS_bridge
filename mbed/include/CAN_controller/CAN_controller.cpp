@@ -1,4 +1,4 @@
-#include "CAN_controller.h"
+#include <CAN_controller/CAN_controller.h>
 
 // Constructor
 CAN_controller::CAN_controller()
@@ -23,6 +23,7 @@ void CAN_controller::can_Cb(void){
 
 
 // モータから受け取った情報をmotor_statusに格納
+// 関節番号とCAN_IDがずれることに留意！
 void CAN_controller::can_send(uint8_t id_){
     CANMessage msg_;
     msg_.id = id_+1;
@@ -84,43 +85,4 @@ void CAN_controller::set_position_to_zero(uint8_t id_){
     if(can.write(msg_)){
         // pc.printf("Set the current motor position to zero \r\n");    // Debug
     }
-}
-
-// motor_statusの目標値をCANMessageにセット
-// この関数を呼び出す前に必ずIDを設定しておくこと！
-bool CAN_controller::pack_cmd(CANMessage& msg_){
-    // Set Limit 
-    // convert float -> uint
-    int p_int  = float_to_uint(fminf(fmaxf(P_MIN,  motor[msg_.id-1].q_ref),   P_MAX),  P_MIN,  P_MAX,  16);     // Position
-    int v_int  = float_to_uint(fminf(fmaxf(V_MIN,  motor[msg_.id-1].dq_ref),  V_MAX),  V_MIN,  V_MAX,  12);     // Velocity
-    int kp_int = float_to_uint(fminf(fmaxf(KP_MIN, motor[msg_.id-1].Kp),     KP_MAX), KP_MIN, KP_MAX,  12);     // Kp
-    int kd_int = float_to_uint(fminf(fmaxf(KD_MIN, motor[msg_.id-1].Kd),     KD_MAX), KD_MIN, KD_MAX,  12);     // Kd
-    int t_int  = float_to_uint(fminf(fmaxf(T_MIN,  motor[msg_.id-1].tau_ref), T_MAX),  T_MIN,  T_MAX,  12);      // Torque
-    
-    // Pack ints into the CAN buffer
-    msg_.data[0] = p_int >> 8;
-    msg_.data[1] = p_int & 0xFF;
-    msg_.data[2] = v_int >> 4;
-    msg_.data[3] = ((v_int & 0xF)<<4) | (kp_int >> 8);
-    msg_.data[4] = kp_int & 0xFF;
-    msg_.data[5] = kd_int >> 4;
-    msg_.data[6] = ((kd_int & 0xF)<<4) | (t_int>>8);
-    msg_.data[7] = t_int & 0xFF;
-
-    return true;
-}
-
-
-// CANMessageのIDに対応したmotor_statusにデータ(can_reply_msg)を格納
-// CANMessageの値はデジタル値なのでアナログ値に変換して格納する
-// motor_status_vectorの実体が見える必要あり
-bool CAN_controller::unpack_reply(const CANMessage& msg){
-    uint8_t id_ = msg.data[0];
-
-    // CAN_IDは1から始まる
-    // idによって自動的に振り分けられるようにしたい！
-    motor[id_-1].q   = uint_to_float(((msg.data[1]<<8) | msg.data[2]),       P_MIN, P_MAX, 16);
-    motor[id_-1].dq  = uint_to_float(((msg.data[3]<<4) | (msg.data[4]>>4)),  V_MIN, V_MAX, 12);
-    motor[id_-1].tau = uint_to_float((((msg.data[4]&0xF)<<8) | msg.data[5]), T_MIN, T_MAX, 12);
-    return true;
 }

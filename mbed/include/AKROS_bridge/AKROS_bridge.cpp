@@ -1,4 +1,4 @@
-#include <AKROS_bridge.h>
+#include "AKROS_bridge.h"
 
 AKROS_bridge::AKROS_bridge(ros::NodeHandle* n_)
   : myled(LED1),
@@ -26,11 +26,11 @@ AKROS_bridge::AKROS_bridge(ros::NodeHandle* n_)
 }
 
 
-// モータ指令トピックに対するsubscriberのコールバック関数
+// モータCAN指令に対するsubscriberのコールバック関数
 // 指令を受け取ったらcan_controllerクラスのメンバ変数（motor）に格納
-void AKROS_bridge::motor_cmd_Cb(const AKROS_bridge_msgs::motor_cmd& cmd_){
+void AKROS_bridge::motor_cmd_Cb(const AKROS_bridge_msgs::motor_can& cmd_){
     for(uint8_t i=0; i<motor_num; i++){
-        can_controller.motor[i].q_ref   = cmd_.cmd.positions[i];
+        can_controller.motor[i].q_ref   = cmd_.motor[i].data;
         can_controller.motor[i].dq_ref  = cmd_.cmd.velocities[i];
         can_controller.motor[i].tau_ref = cmd_.cmd.effort[i];
         can_controller.motor[i].Kp      = cmd_.Kp[i];

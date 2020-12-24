@@ -4,20 +4,18 @@
 #include <mbed.h>
 #include <vector>
 #include <ros.h>
-
 #include <config.h>
 #include <std_srvs/Empty.h>
-#include <AKROS_bridge_msgs/motor_cmd.h>
-#include <AKROS_bridge_msgs/motor_reply.h>
+#include <AKROS_bridge_msgs/motor_can_cmd.h>
+#include <AKROS_bridge_msgs/motor_can_reply.h>
 #include <AKROS_bridge_msgs/Initialize.h>
-
 #include <CAN_controller.h>
 
 
 class AKROS_bridge{
 private:
     // variables
-    AKROS_bridge_msgs::motor_reply   motor_reply_msg;   // ROSにモータの状態を返すmsg
+    AKROS_bridge_msgs::motor_   motor_reply_msg;   // ROSにモータの状態を返すmsg
     uint8_t motor_num = 0;  // モータの個数
 
     // Objects
@@ -29,8 +27,10 @@ private:
     
     // Pubs,Subs,Srvs
     ros::NodeHandle *nh_priv;
-    ros::Publisher motor_status_pub;
-    ros::Subscriber<AKROS_bridge_msgs::motor_cmd, AKROS_bridge> motor_cmd_sub;
+
+    ros::Publisher motor_reply_pub;
+    ros::Subscriber<AKROS_bridge_msgs::motor_can_cmd, AKROS_bridge> motor_cmd_sub;
+    
     ros::ServiceServer<AKROS_bridge_msgs::Initialize::Request, AKROS_bridge_msgs::Initialize::Response, AKROS_bridge> enter_control_mode_srv;
     ros::ServiceServer<std_srvs::Empty::Request, std_srvs::Empty::Response, AKROS_bridge> exit_control_mode_srv;
     ros::ServiceServer<std_srvs::Empty::Request, std_srvs::Empty::Response, AKROS_bridge> set_zero_pos_srv;
@@ -40,7 +40,6 @@ private:
     void enter_control_mode_Cb(const AKROS_bridge_msgs::Initialize::Request&, AKROS_bridge_msgs::Initialize::Response&);
     void exit_control_mode_Cb(const std_srvs::Empty::Request&, std_srvs::Empty::Response&);
     void set_zero_pos_Cb(const std_srvs::Empty::Request&, std_srvs::Empty::Response&);
-
 
 public:
     AKROS_bridge(ros::NodeHandle*);

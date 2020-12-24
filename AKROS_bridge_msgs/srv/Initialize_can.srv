@@ -1,5 +1,0 @@
-# How many motors does robot have ?
-uint8   joint_num
----
-# Robot initial state
-can_msgs/Frame[] can_reply
