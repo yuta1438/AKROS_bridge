@@ -5,6 +5,7 @@
 #include "CAN.h"
 #include <vector>
 #include <motor_status/motor_status.h>
+#include <AKROS_bridge_msgs/motor_can_cmd_single.h>
 #include "config.h"
 #include "../basic_op/basic_op.h"
 
@@ -22,6 +23,7 @@ private:
     CAN can;
     uint8_t motor_num = 0;
     
+    void can_Cb(void);
     bool pack_cmd(CANMessage&);
     bool unpack_reply(const CANMessage&);
     
@@ -33,7 +35,7 @@ public:
     bool initializeFlag;
     
     void attach(void);
-    void can_Cb(void);
+    
     void can_send(uint8_t);
 
     void enter_control_mode(uint8_t id_);

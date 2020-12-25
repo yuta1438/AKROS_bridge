@@ -11,6 +11,7 @@ bool pack_cmd(const AKROS_bridge_msgs::motor_cmd_single &cmd_, AKROS_bridge_msgs
     float tau_des = fminf(fmaxf(T_MIN, cmd_.effort), T_MAX);
     
     // convert float -> uint
+    can_cmd_.id       = cmd_.id;
     can_cmd_.position = float_to_uint(p_des, P_MIN, P_MAX, 16);     // Position
     can_cmd_.velocity = float_to_uint(v_des, V_MIN, V_MAX, 12);     // Velocity
     can_cmd_.Kp       = float_to_uint(kp, KP_MIN, KP_MAX, 12);     // Kp
@@ -33,18 +34,19 @@ bool pack_cmd(const AKROS_bridge_msgs::motor_cmd_single &cmd_, AKROS_bridge_msgs
 
 
 // 応答値の変換
-bool unpack_reply(const AKROS_bridge_msgs::motor_can_reply_single &can_reply_, sensor_msgs::JointState &js_){
+// 一つのモータに対する関数
+bool unpack_reply(const AKROS_bridge_msgs::motor_can_reply_single &can_reply_, AKROS_bridge_msgs::motor_reply_single &reply_){
     // 
     /* Nucleo側に移植
     int p_int = (msg.data[1]<<8) | msg.data[2];
     int v_int = (msg.data[3]<<4) | (msg.data[4]>>4);
     int i_int = ((msg.data[4]&0xF)<<8) | msg.data[5];
     */
-    
-    // 関節IDとCAN_IDは異なるので注意！
-    js_.position[can_reply_.id - 1] = uint_to_float(can_reply_.position, P_MIN, P_MAX, POSITION_BIT_NUM);
-    js_.velocity[can_reply_.id - 1] = uint_to_float(can_reply_.velocity, V_MIN, V_MAX, VELOCITY_BIT_NUM);
-    js_.effort[can_reply_.id - 1]   = uint_to_float(can_reply_.effort, T_MIN, T_MAX, EFFORT_BIT_NUM);
+
+    reply_.id = can_reply_.id;
+    reply_.position = uint_to_float(can_reply_.position, P_MIN, P_MAX, POSITION_BIT_NUM);
+    reply_.velocity = uint_to_float(can_reply_.velocity, V_MIN, V_MAX, VELOCITY_BIT_NUM);
+    reply_.effort   = uint_to_float(can_reply_.effort, T_MIN, T_MAX, EFFORT_BIT_NUM);
 
     return true;
 }

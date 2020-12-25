@@ -2,4 +2,4 @@
 uint8 joint_num
 ---
 # Robot initial state
-AKROS_bridge_msgs/motor_reply reply
+AKROS_bridge_msgs/motor_can_reply can_reply

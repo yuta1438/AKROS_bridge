@@ -8,6 +8,11 @@
 		"python.autoComplete.extraPaths": [
 			"/home/falaptop/catkin_ws/devel/lib/python2.7/dist-packages",
 			"/opt/ros/melodic/lib/python2.7/dist-packages"
-		]
+		],
+		"files.associations": {
+			"array": "cpp",
+			"string": "cpp",
+			"string_view": "cpp"
+		}
 	}
 }

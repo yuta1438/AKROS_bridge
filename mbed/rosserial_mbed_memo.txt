@@ -1,1 +1,4 @@
 rosrun rosserial_mbed make_libraries.py ~/ros/lib
+↑.shファイルで記載．
+
+「sh create_ros_lib.sh」で実行．sudoは不要．

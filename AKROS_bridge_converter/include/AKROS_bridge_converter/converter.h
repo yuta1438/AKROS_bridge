@@ -4,7 +4,7 @@
 #include <AKROS_bridge_msgs/motor_can_cmd_single.h>
 #include <AKROS_bridge_msgs/motor_can_reply_single.h>
 #include <AKROS_bridge_msgs/motor_cmd_single.h>
-#include <sensor_msgs/JointState.h>
+#include <AKROS_bridge_msgs/motor_reply_single.h>
 #include "basic_op.h"
 
 #define P_MIN   -95.5f
@@ -29,6 +29,6 @@
 bool pack_cmd(const AKROS_bridge_msgs::motor_cmd_single&, AKROS_bridge_msgs::motor_can_cmd_single&);
 
 // convert to ROS message 
-bool unpack_reply(const AKROS_bridge_msgs::motor_can_reply_single&, sensor_msgs::JointState&);
+bool unpack_reply(const AKROS_bridge_msgs::motor_can_reply_single&, AKROS_bridge_msgs::motor_reply_single&);
 
 #endif
