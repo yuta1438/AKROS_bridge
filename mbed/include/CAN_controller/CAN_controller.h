@@ -4,7 +4,7 @@
 #include "mbed.h"
 #include "CAN.h"
 #include <vector>
-#include <motor_status.h>
+#include <motor_status/motor_status.h>
 #include "config.h"
 #include "../basic_op/basic_op.h"
 
@@ -44,8 +44,6 @@ public:
     void attach(void);
     void can_Cb(void);
     void can_send(uint8_t);
-    void add_motor(void);
-    uint8_t getMotorNum(void);
 
     void enter_control_mode(uint8_t id_);
     void exit_control_mode(uint8_t id_);

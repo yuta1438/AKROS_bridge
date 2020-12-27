@@ -7,20 +7,16 @@
             },
             "includePath": [
                 "${ROS_LIB_DIR}",
-<<<<<<< HEAD
-                "~/catkin_ws/src/AKROS_bridge/mbed/include/**",
-                "${workspaceFolder}/include/**"
-=======
                 "~/catkin_ws/src/AKROS_bridge/mbed/include",
                 "/opt/ros/melodic/include",
-                "~/catkin_ws/AKROS_bridge"
->>>>>>> parent of ac169de... 説明文を追加
+                "~/catkin_ws/src/AKROS_bridge",
+                "${workspaceFolder}/include"
             ],
             "name": "AKROS_bridge_mbed",
             "intelliSenseMode": "gcc-x64",
             "compilerPath": "/usr/bin/gcc",
-            "cStandard": "c11",
-            "cppStandard": "c++17"
+            "cStandard": "gnu11",
+            "cppStandard": "gnu++14"
         }
     ],
     "version": 4

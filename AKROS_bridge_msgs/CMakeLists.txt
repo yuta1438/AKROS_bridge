@@ -65,8 +65,6 @@ add_service_files(
   Initialize.srv
   Initialize_single.srv
   Initialize_can.srv
-  finalize.srv
-  set_zero_pos.srv
 )
 
 ## Generate actions in the 'action' folder
