@@ -1,1 +1,1 @@
-sensor_msgs/JointState state
+AKROS_bridge_msgs/motor_reply_single[] motor

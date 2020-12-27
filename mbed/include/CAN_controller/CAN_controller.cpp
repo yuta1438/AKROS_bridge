@@ -30,6 +30,13 @@ void CAN_controller::can_send(uint8_t id_){
     can.write(msg_);
 }
 
+void CAN_controller::add_motor(void){
+    motor_num++;
+}
+
+uint8_t CAN_controller::getMotorNum(void){
+    return motor_num;
+}
 
 // enter control mode(モータコントロールモードに入る)
 // モータを制御するためには必須！

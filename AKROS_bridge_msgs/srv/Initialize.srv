@@ -1,5 +1,7 @@
 # How many motors does robot have ?
-uint8   joint_num
+uint8   id
 ---
 # Robot initial state
-sensor_msgs/JointState  jointstate
+float32 position
+float32 velocity
+float32 effort

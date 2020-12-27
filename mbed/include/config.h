@@ -13,12 +13,6 @@
 //#define TARGET_BOARD    NUCLEO_F303K8
 
 
-// Pin Settings
-#define TWEAK_TOGGLE_PIN     D7
-#define TWEAK_TACT_UP_PIN    D8
-#define TWEAK_TACT_DOWN_PIN  D9
-
-// Value Settings
 #define P_MIN   -95.5f
 #define P_MAX   95.5f
 #define V_MIN   -30.0f
