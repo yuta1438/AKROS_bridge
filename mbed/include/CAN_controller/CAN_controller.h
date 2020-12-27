@@ -21,22 +21,24 @@
 class CAN_controller{
 private:
     CAN can;
-    uint8_t motor_num = 0;
+    bool initializeFlag;
     
     void can_Cb(void);
-    bool pack_cmd(CANMessage&);
-    bool unpack_reply(const CANMessage&);
+    void pack_cmd(CANMessage&);
+    void unpack_reply(const CANMessage&);
     
 public:
     CAN_controller();
     ~CAN_controller(){};
     std::vector<motor_status> motor;
 
-    bool initializeFlag;
-    
-    void attach(void);
-    
+    bool getInitializeFlag(void);
+    void startControl(void);
+
+    void add_motor(uint8_t);
+    uint8_t find_iterator(uint8_t);
     void can_send(uint8_t);
+    uint8_t getMotorNum(void);
 
     void enter_control_mode(uint8_t id_);
     void exit_control_mode(uint8_t id_);

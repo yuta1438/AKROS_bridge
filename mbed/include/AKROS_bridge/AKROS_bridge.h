@@ -9,6 +9,9 @@
 #include <AKROS_bridge_msgs/motor_can_cmd.h>
 #include <AKROS_bridge_msgs/motor_can_reply.h>
 #include <AKROS_bridge_msgs/Initialize_can.h>
+#include <AKROS_bridge_msgs/Initialize_lock.h>
+#include <AKROS_bridge_msgs/finalize.h>
+#include <AKROS_bridge_msgs/set_zero_pos.h>
 #include <CAN_controller.h>
 
 
@@ -16,7 +19,6 @@ class AKROS_bridge{
 private:
     // variables
     AKROS_bridge_msgs::motor_can_reply   can_reply_msg;   // ROSにモータの状態を返すmsg
-    uint8_t motor_num = 0;  // モータの個数
 
     // Objects
     DigitalOut  myled;  // Nucleo上のLED
@@ -32,14 +34,16 @@ private:
     ros::Subscriber<AKROS_bridge_msgs::motor_can_cmd, AKROS_bridge> can_cmd_sub;
     
     ros::ServiceServer<AKROS_bridge_msgs::Initialize_can::Request, AKROS_bridge_msgs::Initialize_can::Response, AKROS_bridge> enter_control_mode_srv;
-    ros::ServiceServer<std_srvs::Empty::Request, std_srvs::Empty::Response, AKROS_bridge> exit_control_mode_srv;
-    ros::ServiceServer<std_srvs::Empty::Request, std_srvs::Empty::Response, AKROS_bridge> set_zero_pos_srv;
+    ros::ServiceServer<AKROS_bridge_msgs::Initialize_lock::Request, AKROS_bridge_msgs::Initialize_lock::Response, AKROS_bridge> initialize_lock_srv;
+    ros::ServiceServer<AKROS_bridge_msgs::finalize::Request, AKROS_bridge_msgs::finalize::Response, AKROS_bridge> exit_control_mode_srv;
+    ros::ServiceServer<AKROS_bridge_msgs::set_zero_pos::Request, AKROS_bridge_msgs::set_zero_pos::Response, AKROS_bridge> set_zero_pos_srv;
 
     // callback functions
     void can_cmd_Cb(const AKROS_bridge_msgs::motor_can_cmd&);
+    void initialize_lock_Cb(const AKROS_bridge_msgs::Initialize_lock::Request&, AKROS_bridge_msgs::Initialize_lock::Response&);
     void enter_control_mode_Cb(const AKROS_bridge_msgs::Initialize_can::Request&, AKROS_bridge_msgs::Initialize_can::Response&);
-    void exit_control_mode_Cb(const std_srvs::Empty::Request&, std_srvs::Empty::Response&);
-    void set_zero_pos_Cb(const std_srvs::Empty::Request&, std_srvs::Empty::Response&);
+    void exit_control_mode_Cb(const AKROS_bridge_msgs::finalize::Request&, AKROS_bridge_msgs::finalize::Response&);
+    void set_zero_pos_Cb(const AKROS_bridge_msgs::set_zero_pos::Request&, AKROS_bridge_msgs::set_zero_pos::Response&);
 
 
     // functions
@@ -50,7 +54,6 @@ private:
 public:
     AKROS_bridge(ros::NodeHandle*);
     ~AKROS_bridge(void){};
-    uint8_t getMotorNum(void);
     void loop(void);
 };
 #endif

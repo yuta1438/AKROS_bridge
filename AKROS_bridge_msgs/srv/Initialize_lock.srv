@@ -1,0 +1,2 @@
+---
+uint8 motor_num  # How many motors do you have?

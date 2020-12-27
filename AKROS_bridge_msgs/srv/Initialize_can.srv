@@ -1,5 +1,5 @@
 # How many motors does robot have ?
-uint8 joint_num
+uint8 CAN_ID
 ---
 # Robot initial state
-AKROS_bridge_msgs/motor_can_reply can_reply
+AKROS_bridge_msgs/motor_can_reply_single can_reply
