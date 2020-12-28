@@ -7,6 +7,11 @@
 // Pin Settings
 #define CAN_RX_PIN  PB_8
 #define CAN_TX_PIN  PB_9
+
+#define GREEN_LED_PIN   D13
+#define YELLOW_LED_PIN  D12
+#define RED_LED_PIN     D11
+
 #define TWEAK_TOGGLE_PIN     D7
 #define TWEAK_TACT_UP_PIN    D8
 #define TWEAK_TACT_DOWN_PIN  D9
@@ -22,5 +27,9 @@
 #define KD_MAX   5.0f
 #define T_MIN   -18.0f
 #define T_MAX   18.0f
+
+#define POSITION_BIT_NUM    16
+#define VELOCITY_BIT_NUM    12
+#define EFFORT_BIT_NUM      12
 
 #endif

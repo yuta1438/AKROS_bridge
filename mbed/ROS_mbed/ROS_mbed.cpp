@@ -14,7 +14,7 @@ int main(void){
     nh.initNode();
 
     AKROS_bridge akros(&nh);    // インスタンス生成．NodeHandleのアドレスを渡す．
-    wait_ms(500);
+    wait_ms(100);
 
     while(1){
         akros.loop();
