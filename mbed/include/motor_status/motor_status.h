@@ -4,13 +4,14 @@
 
 typedef struct motor_status_{
     uint8_t id;
-    uint16_t position;
-    uint16_t position_ref;
-    uint16_t velocity;
-    uint16_t velocity_ref;
-    uint16_t effort;
-    uint16_t effort_ref;
-    uint16_t Kp;
-    uint16_t Kd;
+    bool control_mode;
+    int position = 32767;
+    int position_ref = 32767;
+    int velocity = 2047;
+    int velocity_ref = 2047; 
+    int effort = 2047;
+    int effort_ref = 2047;
+    int Kp = 0;     // 初期状態では脱力
+    int Kd = 0;
 } motor_status;
 #endif

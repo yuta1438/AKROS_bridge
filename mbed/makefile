@@ -13,11 +13,7 @@
 # limitations under the License.
 #
 # Directories to be built
-DIRS := ROS_mbed\
-		ROS_mbed_single\
-		can\
-		can_single\
-        slave
+DIRS := AKROS_bridge_mbed
 DIRSCLEAN := $(addsuffix .clean,$(DIRS))
 
 

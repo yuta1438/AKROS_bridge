@@ -1,4 +1,4 @@
-#include <CAN_controller/CAN_controller.h>
+#include <CAN_controller.h>
 
 // Constructor
 CAN_controller::CAN_controller()
@@ -25,25 +25,25 @@ void CAN_controller::can_Cb(void){
 // デジタル指令値をCANメッセージに変換（結合といったほうが正しい？）
 // 送信先のCAN_IDをこの関数よりも前に入れておけ！
 void CAN_controller::serialize_cmd(CANMessage &msg_){
-    uint8_t id = msg_.id - 1;
-    msg_.data[0] = motor[id].position_ref >> 8;
-    msg_.data[1] = motor[id].position_ref & 0xFF;
-    msg_.data[2] = motor[id].velocity_ref >> 4;
-    msg_.data[3] = ((motor[id].velocity_ref & 0xF)<<4) | (motor[id].Kp >> 8);
-    msg_.data[4] = motor[id].Kp & 0xFF;
-    msg_.data[5] = motor[id].Kd >> 4;
-    msg_.data[6] = ((motor[id].Kd & 0xF)<<4) | (motor[id].effort_ref>>8);
-    msg_.data[7] = motor[id].effort_ref & 0xFF;
+    uint8_t index_ = find_index(msg_.id);
+    msg_.data[0] = motor[index_].position_ref >> 8;
+    msg_.data[1] = motor[index_].position_ref & 0xFF;
+    msg_.data[2] = motor[index_].velocity_ref >> 4;
+    msg_.data[3] = ((motor[index_].velocity_ref & 0xF)<<4) | (motor[index_].Kp >> 8);
+    msg_.data[4] = motor[index_].Kp & 0xFF;
+    msg_.data[5] = motor[index_].Kd >> 4;
+    msg_.data[6] = ((motor[index_].Kd & 0xF)<<4) | (motor[index_].effort_ref>>8);
+    msg_.data[7] = motor[index_].effort_ref & 0xFF;
 }
 
 
 // モータから返ってくるデジタル値（結合）をそれぞれの要素に分解
 void CAN_controller::deserialize_reply(const CANMessage& msg_){
-    uint8_t id_ = find_index(msg_.data[0]);
+    uint8_t index_ = find_index(msg_.data[0]);
 
-    motor[id_].position = ((msg_.data[1]<<8) | msg_.data[2]);
-    motor[id_].velocity = ((msg_.data[3]<<4) | (msg_.data[4]>>4));
-    motor[id_].effort   = (((msg_.data[4]&0xF)<<8) | msg_.data[5]);
+    motor[index_].position = ((msg_.data[1]<<8) | msg_.data[2]);
+    motor[index_].velocity = ((msg_.data[3]<<4) | (msg_.data[4]>>4));
+    motor[index_].effort   = (((msg_.data[4]&0xF)<<8) | msg_.data[5]);
 }
 
 
@@ -52,7 +52,7 @@ void CAN_controller::deserialize_reply(const CANMessage& msg_){
 void CAN_controller::unpack_reply(AKROS_bridge_msgs::motor_reply_single& reply_, uint8_t CAN_ID_){
     uint8_t id_ = find_index(CAN_ID_);
     
-    reply_.id = id_;
+    reply_.id = motor[id_].id;
     reply_.position = uint_to_float(motor[id_].position, P_MIN, P_MAX, POSITION_BIT_NUM);
     reply_.velocity = uint_to_float(motor[id_].velocity, V_MIN, V_MAX, VELOCITY_BIT_NUM);
     reply_.effort   = uint_to_float(motor[id_].effort, T_MIN, T_MAX, EFFORT_BIT_NUM);
@@ -60,10 +60,9 @@ void CAN_controller::unpack_reply(AKROS_bridge_msgs::motor_reply_single& reply_,
 
 
 // モータから受け取った情報をmotor_statusに格納
-// 関節番号とCAN_IDがずれることに留意！
-void CAN_controller::can_send(uint8_t id_){
+void CAN_controller::can_send(uint8_t index_){
     CANMessage msg_;
-    msg_.id = motor[id_].id;
+    msg_.id = motor[index_].id;
     serialize_cmd(msg_);
     can.write(msg_);
 }
@@ -151,14 +150,26 @@ uint8_t CAN_controller::find_index(uint8_t CAN_ID_){
             return i;
         }
     }
-    return -1;
+    return ERROR_VALUE;
 }
 
+
+// モータ個数がすでに決定したかどうか
 bool CAN_controller::getInitializeFlag(void){
     return initializeFlag;
 }
 
 
-void CAN_controller::startControl(void){
-    initializeFlag = true;
+void CAN_controller::setInitializeFlag(bool b){
+    initializeFlag = b;
+}
+
+// モータの稼動状態を設定
+void CAN_controller::setControlMode(uint8_t index_, bool mode_){
+    motor[index_].control_mode = mode_;
+}
+
+// モータの稼動状態を取得
+bool CAN_controller::getControlMode(uint8_t index_){
+    return motor[index_].control_mode;
 }

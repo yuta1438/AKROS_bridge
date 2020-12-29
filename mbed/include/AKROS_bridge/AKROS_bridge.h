@@ -18,7 +18,7 @@ class AKROS_bridge{
 private:
     // Objects
     // BusOut leds;
-    DigitalOut  myled;  // Nucleo上のLED
+    DigitalOut  Nucleo_led;  // Nucleo上のLED
     DigitalIn   tweak_toggle;   // 微調節モード用のトグルスイッチ
     DigitalIn   tweak_tact_up, tweak_tact_down; // 微調節モード用のタクトスイッチ
 
