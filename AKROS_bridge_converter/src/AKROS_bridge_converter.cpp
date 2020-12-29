@@ -24,18 +24,21 @@ AKROS_bridge_msgs::motor_reply reply;
 
 std::mutex m;   // 排他処理
 
-uint8_t motor_num = 0;
+uint8_t motor_num = 2;
 bool initialize_flag = false;
 
 
 // motor_cmdを受け取ってcan_msgに変換
 void convert_Cb(const AKROS_bridge_msgs::motor_cmd::ConstPtr& cmd_){
     std::lock_guard<std::mutex> lock(m);
-
+    if(initialize_flag == false){
+        initialize_flag = true;
+    }
+    /*
     if(motor_num != cmd_->motor.size()){
         motor_num = cmd_->motor.size();
         can_cmd.motor.resize(motor_num);
-    }
+    }*/
     for(uint8_t i=0; i<motor_num; i++){
         pack_cmd(cmd_->motor[i], can_cmd.motor[i]);
     }
@@ -44,14 +47,15 @@ void convert_Cb(const AKROS_bridge_msgs::motor_cmd::ConstPtr& cmd_){
 // can_replyを受け取って変換
 void reply_Cb(const AKROS_bridge_msgs::motor_can_reply::ConstPtr& can_reply_){
     std::lock_guard<std::mutex> lock(m);
+    /*
     if(motor_num != can_reply_->motor.size()){
         motor_num = can_reply_->motor.size();
         reply.motor.resize(motor_num);
-    }
-    
+    }*/
     for(uint8_t i=0; i<motor_num; i++){
         unpack_reply(can_reply_->motor[i], reply.motor[i]);
     }
+    
 }
 
 int main(int argc, char** argv){
@@ -76,8 +80,10 @@ int main(int argc, char** argv){
     spinner.start();
 
     while(ros::ok()){
-        can_pub.publish(can_cmd);
-        reply_pub.publish(reply);
+        if(initialize_flag){
+            reply_pub.publish(reply);
+            can_pub.publish(can_cmd);
+        }
         loop_rate.sleep();
     }
     
