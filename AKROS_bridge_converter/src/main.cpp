@@ -1,7 +1,7 @@
 // デジタル値とアナログ値をそれぞれ変換するノード
 
 #include <ros/ros.h>
-#include <AKROS_bridge_converter/converter.h>
+#include <AKROS_bridge_converter/AKROS_bridge_converter.h>
 
 #define ROS_Hz      100
 
@@ -16,13 +16,13 @@ int main(int argc, char** argv){
     
 
     ROS_INFO("Converter Ready !");
-    spinner.start();
+    // spinner.start();
 
     while(ros::ok()){
         loop_rate.sleep();
     }
     
-    spinner.stop();
+    // spinner.stop();
     ros::waitForShutdown();
     return 0;
 }

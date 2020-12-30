@@ -13,10 +13,7 @@
 #include <AKROS_bridge_msgs/motor_can_reply.h>
 #include <AKROS_bridge_msgs/motor_cmd.h>
 #include <AKROS_bridge_msgs/motor_reply.h>
-#include <AKROS_bridge_msgs/motor_can_cmd_single.h>
-#include <AKROS_bridge_msgs/motor_can_reply_single.h>
-#include <AKROS_bridge_msgs/motor_cmd_single.h>
-#include <AKROS_bridge_msgs/motor_reply_single.h>
+
 #include "basic_op.h"
 
 // モータ設定
@@ -36,6 +33,8 @@
 #define SET_POSITION_TO_ZERO    3
 #define INITIALIZE_LOCK         4
 #define SERVO_OFF               5
+
+#define ERROR_NUM   99
 
 #define P_MIN   -95.5f
 #define P_MAX   95.5f
@@ -58,12 +57,12 @@
 class AKROS_bridge_converter{
 private:
     ros::NodeHandle nh_priv;
-    bool initializeFlag = false;
+    bool initializeFlag;
 
-    uint8_t motor_num = 0;
+    uint8_t motor_num;
     std::vector<motor_status> motor;
 
-    ros::AsyncSpinner spinner;  
+    ros::AsyncSpinner spinner;
     std::mutex motor_mutex;   // 排他処理
 
     /** トピック通信関係 **/
@@ -75,14 +74,14 @@ private:
     ros::Subscriber cmd_sub;    // ROSから実数指令値を受け取る
 
     // for convertion
-    bool pack_cmd(const AKROS_bridge_msgs::motor_cmd_single&, AKROS_bridge_msgs::motor_can_cmd_single&);    // convert to CAN message
-    bool unpack_reply(const AKROS_bridge_msgs::motor_can_reply_single&, AKROS_bridge_msgs::motor_reply_single&);    // convert to ROS message
 
+    bool pack_cmd(AKROS_bridge_msgs::motor_can_cmd_single&, uint8_t);    // convert// 一つのモータに対する関数 to CAN message
+    bool pack_reply(AKROS_bridge_msgs::motor_reply_single&, uint8_t);    // convert to ROS message
+    void unpack_can_reply(const AKROS_bridge_msgs::motor_can_reply_single&);
+    
     // Callback Functions
-    void convert_cmd_Cb(const AKROS_bridge_msgs::motor_cmd::ConstPtr&);
-    void convert_reply_Cb(const AKROS_bridge_msgs::motor_can_reply::ConstPtr&);
-    void publish_cmd(void);
-    void publish_reply(void);
+    void motor_cmd_Cb(const AKROS_bridge_msgs::motor_cmd&);
+    void can_reply_Cb(const AKROS_bridge_msgs::motor_can_reply&);
 
 
     /** サービス通信 **/
@@ -91,23 +90,29 @@ private:
     ros::ServiceServer set_PZ_server;   // set_zero_position_server
     ros::ServiceServer servo_setting_server;    // set servo of the motor
     ros::ServiceServer motor_lock_server;
+    ros::ServiceServer current_state_server;
 
     ros::ServiceClient motor_config_client; // モータに関する各種設定
+    
     AKROS_bridge_msgs::motor_config motor_config_srv;
+    
 
     // Callback Functions
-    bool enter_CM_Cb(const AKROS_bridge_msgs::enter_control_mode::Request&, AKROS_bridge_msgs::enter_control_mode::Response&);
-    bool exit_CM_Cb(const AKROS_bridge_msgs::exit_control_mode::Request&, AKROS_bridge_msgs::exit_control_mode::Response&);
-    bool set_PZ_Cb(const AKROS_bridge_msgs::set_position_zero::Request&, AKROS_bridge_msgs::set_position_zero::Response&);
-    bool servo_setting_Cb(const AKROS_bridge_msgs::servo_setting::Request&, AKROS_bridge_msgs::servo_setting::Response&);
+    bool enter_CM_Cb(AKROS_bridge_msgs::enter_control_mode::Request&, AKROS_bridge_msgs::enter_control_mode::Response&);
+    bool exit_CM_Cb(AKROS_bridge_msgs::exit_control_mode::Request&, AKROS_bridge_msgs::exit_control_mode::Response&);
+    bool set_PZ_Cb(AKROS_bridge_msgs::set_position_zero::Request&, AKROS_bridge_msgs::set_position_zero::Response&);
+    bool servo_setting_Cb(AKROS_bridge_msgs::servo_setting::Request&, AKROS_bridge_msgs::servo_setting::Response&);
     bool motor_lock_Cb(std_srvs::Empty::Request&, std_srvs::Empty::Response&);
 
     // 現在の状態を返す
-    bool current_state_Cb(const AKROS_bridge_msgs::currentState::Request&, AKROS_bridge_msgs::currentState::Response&);
+    bool current_state_Cb(AKROS_bridge_msgs::currentState::Request&, AKROS_bridge_msgs::currentState::Response&);
 
+    uint8_t find_index(uint8_t);
 public:
     AKROS_bridge_converter(ros::NodeHandle&);
-    ~AKROS_bridge_converter(){};
+    ~AKROS_bridge_converter(void);
+    void publish_cmd(void);
+    void publish_reply(void);
 
 };
 #endif
