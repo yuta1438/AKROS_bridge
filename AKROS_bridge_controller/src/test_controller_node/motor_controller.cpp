@@ -5,14 +5,15 @@
 
 #include <AKROS_bridge_msgs/motor_cmd.h>
 #include <AKROS_bridge_msgs/motor_config.h>
-#include <AKROS_bridge_msgs/currentState.h>
 
+#include <AKROS_bridge_msgs/currentState.h>
+#include <AKROS_bridge_msgs/
 #define MOTOR_NUM  2
 
 static const double endTime = 15.0; // [s]
 static const double control_frequency = 50.0;  // [Hz]
 
-static const double wave_frequency[2] = {0.5, 0.25};   // [Hz]
+static const double wave_frequency[2] = {1.0, 0.25};   // [Hz]
 static const double amplitude[2] = {M_PI/4, M_PI/4};   //[rad]
 
 double q_init[MOTOR_NUM];
@@ -24,6 +25,8 @@ ros::ServiceClient motor_config_client, current_state_client;
 AKROS_bridge_msgs::motor_cmd cmd;    // Publish_msg
 AKROS_bridge_msgs::motor_config motor_config_srv;
 AKROS_bridge_msgs::currentState current_state_srv;
+
+
 
 int main(int argc, char** argv){
     ros::init(argc, argv, "motor_controller");

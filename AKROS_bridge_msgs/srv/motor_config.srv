@@ -1,4 +1,5 @@
 # モータに関する設定の種類
+# Nucleo - Converter間で使用
 # 1 -> enter_control_mode
 # 2 -> exit_control_mode
 # 3 -> set_position_to_zero

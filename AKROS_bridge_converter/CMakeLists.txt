@@ -206,7 +206,7 @@ include_directories(
 # catkin_add_nosetests(test)
 
 add_executable(test_pub src/test_pub.cpp)
-add_executable(AKROS_bridge_converter src/AKROS_bridge_converter.cpp src/basic_op.cpp src/converter.cpp)
+add_executable(AKROS_bridge_converter src/main.cpp src/basic_op.cpp src/converter.cpp)
 
 target_link_libraries(test_pub ${catkin_LIBRARIES})
 target_link_libraries(AKROS_bridge_converter ${catkin_LIBRARIES})
