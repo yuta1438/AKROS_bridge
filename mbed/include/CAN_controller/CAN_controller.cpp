@@ -10,7 +10,6 @@ CAN_controller::CAN_controller()
 }
 
 
-
 // モータから受け取った情報をmotor_statusに格納
 void CAN_controller::can_Cb(void){
     CANMessage msg_;
