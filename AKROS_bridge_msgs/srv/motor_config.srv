@@ -1,0 +1,13 @@
+# モータに関する設定の種類
+# 1 -> enter_control_mode
+# 2 -> exit_control_mode
+# 3 -> set_position_to_zero
+# 4 -> initialize_lock
+# 5 -> servo ON
+uint8 configration_mode
+
+# CAN_ID of the motor
+uint8 CAN_ID
+---
+# Whether if configuration success
+bool success

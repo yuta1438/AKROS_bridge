@@ -1,3 +1,1 @@
-trajectory_msgs/JointTrajectoryPoint cmd
-float32[] Kp
-float32[] Kd
+AKROS_bridge_msgs/motor_cmd_single[] motor

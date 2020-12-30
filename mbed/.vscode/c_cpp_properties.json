@@ -7,16 +7,14 @@
             },
             "includePath": [
                 "${ROS_LIB_DIR}",
-                "~/catkin_ws/src/AKROS_bridge/mbed/include",
-                "/opt/ros/melodic/include",
-                "~/catkin_ws/src/AKROS_bridge",
-                "${workspaceFolder}/include"
+                "${workspaceFolder}/include/**",
+                "/usr/include/**"
             ],
             "name": "AKROS_bridge_mbed",
             "intelliSenseMode": "gcc-x64",
             "compilerPath": "/usr/bin/gcc",
-            "cStandard": "gnu11",
-            "cppStandard": "gnu++14"
+            "cStandard": "c11",
+            "cppStandard": "c++17"
         }
     ],
     "version": 4

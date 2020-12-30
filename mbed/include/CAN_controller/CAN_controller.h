@@ -5,22 +5,15 @@
 #include "CAN.h"
 #include <vector>
 #include <motor_status/motor_status.h>
-#include "config.h"
-#include "../basic_op/basic_op.h"
+#include <AKROS_bridge_msgs/motor_can_cmd_single.h>
+#include <AKROS_bridge_msgs/motor_reply_single.h>
+#include <general_settings.h>
+#include <basic_op/basic_op.h>
 
 
 // CAN Settings
 #define CAN_HOST_ID     0
 #define CAN_FREQ        1000000
-
-#if TARGET_BOARD==NUCLEO_F446RE
-    #define CAN_RX_PIN  PB_8
-    #define CAN_TX_PIN  PB_9
-#elif TARGET_BOARD==NUCLEO_F303K8
-    #define CAN_RX_PIN  PA_11
-    #define CAN_TX_PIN  PA_12
-#else
-#endif
 
 #define CAN_TX_DATA_LENGTH  8
 #define CAN_RX_DATA_LENGTH  6
@@ -29,26 +22,35 @@
 class CAN_controller{
 private:
     CAN can;
-    uint8_t motor_num = 0;
+    bool initializeFlag;
     
-    bool pack_cmd(CANMessage&);
-    bool unpack_reply(const CANMessage&);
-    
+    void can_Cb(void);
+    void serialize_cmd(CANMessage&);
+    void deserialize_reply(const CANMessage&);
+
 public:
     CAN_controller();
     ~CAN_controller(){};
+
+    // 可能ならAKROS_bridgeに組み込みたいが...
     std::vector<motor_status> motor;
 
-    bool initializeFlag;
-    
-    void attach(void);
-    void can_Cb(void);
+    // Only use for motor_config_service
+    void unpack_reply(AKROS_bridge_msgs::motor_reply_single&, uint8_t);
+
+    bool getInitializeFlag(void);
+    void setInitializeFlag(bool);
+
+    void setControlMode(uint8_t, bool);
+    bool getControlMode(uint8_t);
+
+    void add_motor(uint8_t);
+    uint8_t find_index(uint8_t);
+    uint8_t getMotorNum(void);
+
     void can_send(uint8_t);
-
-    void enter_control_mode(uint8_t id_);
-    void exit_control_mode(uint8_t id_);
-    void set_position_to_zero(uint8_t id_);
-
-    
+    void enter_control_mode(uint8_t);
+    void exit_control_mode(uint8_t);
+    void set_position_to_zero(uint8_t);
 };
 #endif
