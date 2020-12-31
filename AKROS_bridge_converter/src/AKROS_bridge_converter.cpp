@@ -172,7 +172,10 @@ bool AKROS_bridge_converter::motor_lock_Cb(std_srvs::Empty::Request& res_, std_s
 
     if(motor_config_client.call(motor_config_srv)){
         ROS_INFO("Motors has been locked !");
+        ROS_INFO("AsyncSpinner Start !");
     }
+
+    spinner.start();
 }
 
 

@@ -41,9 +41,6 @@ public:
     bool getInitializeFlag(void);
     void setInitializeFlag(bool);
 
-    void setControlMode(uint8_t, bool);
-    bool getControlMode(uint8_t);
-
     void add_motor(uint8_t);
     uint8_t find_index(uint8_t);
     uint8_t getMotorNum(void);

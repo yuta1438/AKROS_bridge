@@ -3,8 +3,7 @@
 #define MOTOR_STATUS_H_
 
 typedef struct motor_status_{
-    uint8_t id;
-    bool control_mode;
+    uint8_t CAN_ID;
     int position = 32767;
     int position_ref = 32767;
     int velocity = 2047;

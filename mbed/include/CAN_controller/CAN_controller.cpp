@@ -51,7 +51,7 @@ void CAN_controller::deserialize_reply(const CANMessage& msg_){
 void CAN_controller::unpack_reply(AKROS_bridge_msgs::motor_reply_single& reply_, uint8_t CAN_ID_){
     uint8_t id_ = find_index(CAN_ID_);
     
-    reply_.id = motor[id_].id;
+    reply_.CAN_ID = motor[id_].CAN_ID;
     reply_.position = uint_to_float(motor[id_].position, P_MIN, P_MAX, POSITION_BIT_NUM);
     reply_.velocity = uint_to_float(motor[id_].velocity, V_MIN, V_MAX, VELOCITY_BIT_NUM);
     reply_.effort   = uint_to_float(motor[id_].effort, T_MIN, T_MAX, EFFORT_BIT_NUM);
@@ -61,7 +61,7 @@ void CAN_controller::unpack_reply(AKROS_bridge_msgs::motor_reply_single& reply_,
 // モータから受け取った情報をmotor_statusに格納
 void CAN_controller::can_send(uint8_t index_){
     CANMessage msg_;
-    msg_.id = motor[index_].id;
+    msg_.id = motor[index_].CAN_ID;
     serialize_cmd(msg_);
     can.write(msg_);
 }
@@ -133,7 +133,7 @@ void CAN_controller::set_position_to_zero(uint8_t CAN_ID_){
 // CAN_IDの割当を行う
 void CAN_controller::add_motor(uint8_t CAN_ID_){
     motor_status m_temp;
-    m_temp.id = CAN_ID_;
+    m_temp.CAN_ID = CAN_ID_;
     motor.push_back(m_temp);
 }
 
@@ -145,7 +145,7 @@ uint8_t CAN_controller::getMotorNum(void){
 // モータのCAN_IDとvectorの番号は異なるのでそれを求める関数
 uint8_t CAN_controller::find_index(uint8_t CAN_ID_){
     for(uint8_t i=0; i<motor.size(); i++){
-        if(motor[i].id == CAN_ID_){
+        if(motor[i].CAN_ID == CAN_ID_){
             return i;
         }
     }
@@ -161,14 +161,4 @@ bool CAN_controller::getInitializeFlag(void){
 
 void CAN_controller::setInitializeFlag(bool b){
     initializeFlag = b;
-}
-
-// モータの稼動状態を設定
-void CAN_controller::setControlMode(uint8_t index_, bool mode_){
-    motor[index_].control_mode = mode_;
-}
-
-// モータの稼動状態を取得
-bool CAN_controller::getControlMode(uint8_t index_){
-    return motor[index_].control_mode;
 }

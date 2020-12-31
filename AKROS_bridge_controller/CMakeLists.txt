@@ -205,14 +205,14 @@ include_directories(
 # catkin_add_nosetests(test)
 
 
-add_executable(motor_initializer src/initialize/initialize.cpp)
+#add_executable(motor_initializer src/initialize/initialize.cpp)
 add_executable(motor_controller src/test_controller_node/motor_controller.cpp )
 #add_executable(single_motor_controller src/test_controller_node/single_motor_controller.cpp)
 
-add_dependencies(motor_initializer  ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+#add_dependencies(motor_initializer  ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 add_dependencies(motor_controller  ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 #add_dependencies(single_motor_controller ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 
-target_link_libraries(motor_initializer ${catkin_LIBRARIES})
+#target_link_libraries(motor_initializer ${catkin_LIBRARIES})
 target_link_libraries(motor_controller ${catkin_LIBRARIES})
 #target_link_libraries(single_motor_controller ${catkin_LIBRARIES})

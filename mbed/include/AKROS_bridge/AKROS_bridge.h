@@ -18,9 +18,13 @@ class AKROS_bridge{
 private:
     // Objects
     // BusOut leds;
-    DigitalOut  Nucleo_led;  // Nucleo上のLED
-    DigitalIn   tweak_toggle;   // 微調節モード用のトグルスイッチ
-    DigitalIn   tweak_tact_up, tweak_tact_down; // 微調節モード用のタクトスイッチ
+    DigitalOut green_led;
+    DigitalOut yellow_led;
+    DigitalOut red_led; 
+
+    // 微調節モード用
+    DigitalIn   tweak_toggle1, tweak_toggle2;   // トグルスイッチ
+    DigitalIn   tweak_tact_up, tweak_tact_down; // タクトスイッチ
 
     CAN_controller can_controller;  // CAN通信に関するクラス
     
@@ -33,13 +37,10 @@ private:
 
     // services
     ros::ServiceServer<AKROS_bridge_msgs::motor_config::Request, AKROS_bridge_msgs::motor_config::Response, AKROS_bridge> motor_config_srv;
-    ros::ServiceServer<AKROS_bridge_msgs::currentState::Request, AKROS_bridge_msgs::currentState::Response, AKROS_bridge> currentState_srv;
 
     // callback functions
     void can_cmd_Cb(const AKROS_bridge_msgs::motor_can_cmd&);
     void motor_config_Cb(const AKROS_bridge_msgs::motor_config::Request&, AKROS_bridge_msgs::motor_config::Response&);
-    void currentState_Cb(const AKROS_bridge_msgs::currentState::Request&, AKROS_bridge_msgs::currentState::Response&);
-    
 
     // functions
     // タクトスイッチで微調節する
