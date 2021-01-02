@@ -147,6 +147,12 @@ bool AKROS_bridge_converter::set_PZ_Cb(AKROS_bridge_msgs::set_position_zero::Req
         if(motor_config_srv.response.success)
             res_.success = true;
     }
+
+    motor[find_index(req_.CAN_ID)].position_ref = 0.0;
+    motor[find_index(req_.CAN_ID)].velocity_ref = 0.0;
+    motor[find_index(req_.CAN_ID)].effort_ref = 0.0;
+
+    return true;
 }
 
 // motor_cmdのKp，Kdを0にしてモータのサーボをOFFにする

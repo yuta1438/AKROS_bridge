@@ -67,6 +67,7 @@ add_service_files(
   exit_control_mode.srv
   set_position_zero.srv
   servo_setting.srv
+  tweak.srv
 
   currentState.srv
   currentState_can.srv

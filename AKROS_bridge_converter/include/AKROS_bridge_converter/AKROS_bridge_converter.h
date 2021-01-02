@@ -1,4 +1,4 @@
-// 可能ならばクラス化したい！
+// 
 #ifndef AKROS_BRIDGE_CONVERTER_H_
 #define AKROS_BRIDGE_CONVERTER_H_
 
@@ -85,9 +85,9 @@ private:
 
 
     /** サービス通信 **/
-    ros::ServiceServer enter_CM_server; // enter_control_mode_server
-    ros::ServiceServer exit_CM_server;  // exit_control_mode_server
-    ros::ServiceServer set_PZ_server;   // set_zero_position_server
+    ros::ServiceServer enter_CM_server;         // enter_control_mode_server
+    ros::ServiceServer exit_CM_server;          // exit_control_mode_server
+    ros::ServiceServer set_PZ_server;           // set_zero_position_server
     ros::ServiceServer servo_setting_server;    // set servo of the motor
     ros::ServiceServer motor_lock_server;
     ros::ServiceServer current_state_server;
