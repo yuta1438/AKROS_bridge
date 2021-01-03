@@ -93,7 +93,6 @@ void AKROS_bridge::motor_config_Cb(const AKROS_bridge_msgs::motor_config::Reques
     __enable_irq();
 }
 
-
 // 現在のモータ情報を返す
 // Clientのcallでは必ずif(service.call())とすること！
 /*

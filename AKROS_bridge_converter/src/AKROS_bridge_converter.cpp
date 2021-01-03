@@ -9,19 +9,20 @@ AKROS_bridge_converter::AKROS_bridge_converter(ros::NodeHandle& nh)
     can_sub   = nh_priv.subscribe("can_reply", 1, &AKROS_bridge_converter::can_reply_Cb, this);
 
     // Servers
-    enter_CM_server      = nh.advertiseService("enter_control_mode", &AKROS_bridge_converter::enter_CM_Cb, this);
-    exit_CM_server       = nh.advertiseService("exit_control_mode", &AKROS_bridge_converter::exit_CM_Cb, this);
-    set_PZ_server        = nh.advertiseService("set_position_to_zero", &AKROS_bridge_converter::set_PZ_Cb, this);
-    servo_setting_server = nh.advertiseService("servo_setting", &AKROS_bridge_converter::servo_setting_Cb, this);
-    motor_lock_server    = nh.advertiseService("motor_lock", &AKROS_bridge_converter::motor_lock_Cb, this);
-    current_state_server = nh.advertiseService("current_state", &AKROS_bridge_converter::current_state_Cb, this);
-    tweak_control_server = nh.advertiseService("tweak_control", &AKROS_bridge_converter::tweak_control_Cb, this);
+    enter_CM_server      = nh_priv.advertiseService("enter_control_mode", &AKROS_bridge_converter::enter_CM_Cb, this);
+    exit_CM_server       = nh_priv.advertiseService("exit_control_mode", &AKROS_bridge_converter::exit_CM_Cb, this);
+    set_PZ_server        = nh_priv.advertiseService("set_position_to_zero", &AKROS_bridge_converter::set_PZ_Cb, this);
+    servo_setting_server = nh_priv.advertiseService("servo_setting", &AKROS_bridge_converter::servo_setting_Cb, this);
+    motor_lock_server    = nh_priv.advertiseService("motor_lock", &AKROS_bridge_converter::motor_lock_Cb, this);
+    current_state_server = nh_priv.advertiseService("current_state", &AKROS_bridge_converter::current_state_Cb, this);
+    tweak_control_server = nh_priv.advertiseService("tweak_control", &AKROS_bridge_converter::tweak_control_Cb, this);
 
     // Clients
-    motor_config_client = nh.serviceClient<AKROS_bridge_msgs::motor_config>("motor_config");
+    motor_config_client = nh_priv.serviceClient<AKROS_bridge_msgs::motor_config>("motor_config");
     
     initializeFlag = false;
     motor_num = 0;
+    spinner.start();
 }
 
 
@@ -48,6 +49,7 @@ void AKROS_bridge_converter::pack_cmd(AKROS_bridge_msgs::motor_can_cmd_single &c
         can_cmd_.Kp = 0;
         can_cmd_.Kd = 0;
     }
+    //ROS_INFO("pack_cmd");
 }
 
 
@@ -58,6 +60,8 @@ void AKROS_bridge_converter::pack_reply(AKROS_bridge_msgs::motor_reply_single &r
     reply_.position = uint_to_float(motor[index_].position, P_MIN, P_MAX, POSITION_BIT_NUM);
     reply_.velocity = uint_to_float(motor[index_].velocity, V_MIN, V_MAX, VELOCITY_BIT_NUM);
     reply_.effort   = uint_to_float(motor[index_].effort,   T_MIN, T_MAX, EFFORT_BIT_NUM);
+
+    //ROS_INFO("pack_reply");
 }
 
 
@@ -67,10 +71,12 @@ void AKROS_bridge_converter::unpack_cmd(const AKROS_bridge_msgs::motor_cmd_singl
 
     uint8_t index_ = find_index(cmd_.CAN_ID);
     motor[index_].position_ref = float_to_uint(fminf(fmaxf(P_MIN, cmd_.position), P_MAX), P_MIN, P_MAX, POSITION_BIT_NUM);
-    motor[index_].velocity_ref = float_to_uint(fminf(fmaxf(P_MIN, cmd_.velocity), P_MAX), P_MIN, P_MAX, VELOCITY_BIT_NUM);
-    motor[index_].effort_ref   = float_to_uint(fminf(fmaxf(P_MIN, cmd_.effort), P_MAX), P_MIN, P_MAX, EFFORT_BIT_NUM);
-    motor[index_].Kp           = float_to_uint(fminf(fmaxf(P_MIN, cmd_.Kp), P_MAX), P_MIN, P_MAX, KP_BIT_NUM);
-    motor[index_].Kd           = float_to_uint(fminf(fmaxf(P_MIN, cmd_.Kd), P_MAX), P_MIN, P_MAX, KD_BIT_NUM);
+    motor[index_].velocity_ref = float_to_uint(fminf(fmaxf(V_MIN, cmd_.velocity), V_MAX), V_MIN, V_MAX, VELOCITY_BIT_NUM);
+    motor[index_].effort_ref   = float_to_uint(fminf(fmaxf(T_MIN, cmd_.effort), T_MAX), T_MIN, T_MAX, EFFORT_BIT_NUM);
+    motor[index_].Kp           = float_to_uint(fminf(fmaxf(KP_MIN, cmd_.Kp), KP_MAX), KP_MIN, KP_MAX, KP_BIT_NUM);
+    motor[index_].Kd           = float_to_uint(fminf(fmaxf(KD_MIN, cmd_.Kd), KD_MAX), KD_MIN, KD_MAX, KD_BIT_NUM);
+
+    //ROS_INFO("unpack_cmd");
 }
 
 
@@ -82,6 +88,8 @@ void AKROS_bridge_converter::unpack_can_reply(const AKROS_bridge_msgs::motor_can
     motor[index_].position = can_reply_.position;
     motor[index_].velocity = can_reply_.velocity;
     motor[index_].effort   = can_reply_.effort;
+
+    //ROS_INFO("unpack_can_reply");
 }
 
 
@@ -90,6 +98,7 @@ void AKROS_bridge_converter::motor_cmd_Cb(const AKROS_bridge_msgs::motor_cmd::Co
     for(uint8_t i=0; i<cmd_->motor.size(); i++){
         unpack_cmd(cmd_->motor[i]);
     }
+    publish_cmd();
 }
 
 
@@ -98,6 +107,7 @@ void AKROS_bridge_converter::can_reply_Cb(const AKROS_bridge_msgs::motor_can_rep
     for(uint8_t i=0; i<can_reply_->motor.size(); i++){
         unpack_can_reply(can_reply_->motor[i]);
     }
+    publish_reply();
 }
 
 
@@ -170,6 +180,7 @@ bool AKROS_bridge_converter::servo_setting_Cb(AKROS_bridge_msgs::servo_setting::
 
 // モータの個数確定
 // これ以上のモータ追加は不可能
+// 「ERROR: service [/motor_lock] responded with an error: 」が出力される
 bool AKROS_bridge_converter::motor_lock_Cb(std_srvs::Empty::Request& res_, std_srvs::Empty::Response& req_){
     motor_config_srv.request.CAN_ID = 0;
     motor_config_srv.request.configration_mode = INITIALIZE_LOCK;
@@ -184,8 +195,6 @@ bool AKROS_bridge_converter::motor_lock_Cb(std_srvs::Empty::Request& res_, std_s
         ROS_INFO("Motors has been locked !");
         ROS_INFO("AsyncSpinner Start !");
     }
-
-    spinner.start();
 }
 
 
@@ -229,19 +238,23 @@ bool AKROS_bridge_converter::current_state_Cb(AKROS_bridge_msgs::currentState::R
 
 // CAN指令値をmotor_statusから引っ張り出して変換し，publish
 void AKROS_bridge_converter::publish_cmd(void){
-    for(uint8_t i=0; i<motor.size(); i++){
-        pack_cmd(can_cmd.motor[i], i);
+    if(initializeFlag){
+        for(uint8_t i=0; i<motor.size(); i++){
+            pack_cmd(can_cmd.motor[i], i);
+        }
+        can_pub.publish(can_cmd);
     }
-    can_pub.publish(can_cmd);
 }
 
 
 // 応答値をmotor_statusから引っ張り出してpublish
 void AKROS_bridge_converter::publish_reply(void){
-    for(uint8_t i=0; i<motor.size(); i++){
-        pack_reply(reply.motor[i], i);
+    if(initializeFlag){
+        for(uint8_t i=0; i<motor.size(); i++){
+            pack_reply(reply.motor[i], i);
+        }
+        reply_pub.publish(reply);
     }
-    reply_pub.publish(reply);
 }
 
 

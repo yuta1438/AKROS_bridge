@@ -34,10 +34,14 @@ int main(int argc, char** argv){
     cmd_pub = nh.advertise<AKROS_bridge_msgs::motor_cmd>("motor_cmd", 1);
     cmd.motor.resize(MOTOR_NUM);
 
+    for(int i=0; i<MOTOR_NUM; i++){
+        q_init[i] = 0;
+    }
 
     ROS_INFO("Loading current position...");
     // 動かす前に現在位置を取得
 
+    /*
     for(int id=1; id<=MOTOR_NUM; id++){
         current_state_srv.request.CAN_ID = id;  // CAN_IDなので
         if(current_state_client.call(current_state_srv)){
@@ -46,6 +50,7 @@ int main(int argc, char** argv){
             }
         }
     }
+    */
 
     ROS_INFO("Finish loading current position...");
     float omega[2];
@@ -81,6 +86,7 @@ int main(int argc, char** argv){
             cmd_pub.publish(cmd);
         }else{
             ROS_INFO("control finished !");
+            break;
         }
            
         ros::spinOnce();
