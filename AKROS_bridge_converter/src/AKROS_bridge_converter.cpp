@@ -15,6 +15,7 @@ AKROS_bridge_converter::AKROS_bridge_converter(ros::NodeHandle& nh)
     servo_setting_server = nh.advertiseService("servo_setting", &AKROS_bridge_converter::servo_setting_Cb, this);
     motor_lock_server    = nh.advertiseService("motor_lock", &AKROS_bridge_converter::motor_lock_Cb, this);
     current_state_server = nh.advertiseService("current_state", &AKROS_bridge_converter::current_state_Cb, this);
+    tweak_control_server = nh.advertiseService("tweak_control", &AKROS_bridge_converter::tweak_control_Cb, this);
 
     // Clients
     motor_config_client = nh.serviceClient<AKROS_bridge_msgs::motor_config>("motor_config");
@@ -23,6 +24,7 @@ AKROS_bridge_converter::AKROS_bridge_converter(ros::NodeHandle& nh)
     motor_num = 0;
 }
 
+
 AKROS_bridge_converter::~AKROS_bridge_converter(void){
     spinner.stop();
 }
@@ -30,71 +32,71 @@ AKROS_bridge_converter::~AKROS_bridge_converter(void){
 
 // motor_statusからcan_cmdに格納
 // 一つのモータに対する関数
-bool AKROS_bridge_converter::pack_cmd(AKROS_bridge_msgs::motor_can_cmd_single &can_cmd_, uint8_t index_){
+void AKROS_bridge_converter::pack_cmd(AKROS_bridge_msgs::motor_can_cmd_single &can_cmd_, uint8_t index_){
     std::lock_guard<std::mutex> lock(motor_mutex);
     
     can_cmd_.CAN_ID   = motor[index_].CAN_ID;
-    can_cmd_.position = float_to_uint(fminf(fmaxf(P_MIN, motor[index_].position_ref), P_MAX), P_MIN, P_MAX, 16);   // Position
-    can_cmd_.velocity = float_to_uint(fminf(fmaxf(V_MIN, motor[index_].velocity_ref), V_MAX), V_MIN, V_MAX, 12);   // Velocity
-    can_cmd_.effort   = float_to_uint(fminf(fmaxf(T_MIN, motor[index_].effort_ref), T_MAX), T_MIN, T_MAX, 12); // Torque
+    can_cmd_.position = motor[index_].position_ref;
+    can_cmd_.velocity = motor[index_].velocity_ref;
+    can_cmd_.effort   = motor[index_].effort_ref;
 
     // servo_modeに準じてKp，Kdの値を調整
     if(motor[index_].servo_mode){
-        can_cmd_.Kp   = float_to_uint(fminf(fmaxf(KP_MIN, motor[index_].Kp), KP_MAX), KP_MIN, KP_MAX, 12);    // Kp
-        can_cmd_.Kd   = float_to_uint(fminf(fmaxf(KD_MIN, motor[index_].Kd), KD_MAX), KD_MIN, KD_MAX, 12);    // Kd
+        can_cmd_.Kp = motor[index_].Kp;
+        can_cmd_.Kd = motor[index_].Kd;
     }else{
         can_cmd_.Kp = 0;
         can_cmd_.Kd = 0;
     }
-    
-    return true;
 }
 
 
-// motor_statusからmotor_replyに格納
-bool AKROS_bridge_converter::pack_reply(AKROS_bridge_msgs::motor_reply_single &reply_, uint8_t index_){
+// motor_statusをfloat型に変換してmotor_replyに格納
+void AKROS_bridge_converter::pack_reply(AKROS_bridge_msgs::motor_reply_single &reply_, uint8_t index_){
     std::lock_guard<std::mutex> lock(motor_mutex);
-    
     reply_.CAN_ID   = motor[index_].CAN_ID;
-    reply_.position = motor[index_].position;
-    reply_.velocity = motor[index_].velocity;
-    reply_.effort   = motor[index_].effort;
-    
-    return true;
+    reply_.position = uint_to_float(motor[index_].position, P_MIN, P_MAX, POSITION_BIT_NUM);
+    reply_.velocity = uint_to_float(motor[index_].velocity, V_MIN, V_MAX, VELOCITY_BIT_NUM);
+    reply_.effort   = uint_to_float(motor[index_].effort,   T_MIN, T_MAX, EFFORT_BIT_NUM);
 }
 
 
-void AKROS_bridge_converter::unpack_can_reply(const AKROS_bridge_msgs::motor_can_reply_single& can_reply_){
-    uint8_t index_ = find_index(can_reply_.CAN_ID);
-    
-    motor[index_].CAN_ID   = can_reply_.CAN_ID;
-    motor[index_].position = uint_to_float(can_reply_.position, P_MIN, P_MAX, POSITION_BIT_NUM);
-    motor[index_].velocity = uint_to_float(can_reply_.velocity, V_MIN, V_MAX, VELOCITY_BIT_NUM);
-    motor[index_].effort   = uint_to_float(can_reply_.effort, T_MIN, T_MAX, EFFORT_BIT_NUM);
-}
-
-// /motor_cmdを受け取ってmotor_statusに保存
-void AKROS_bridge_converter::motor_cmd_Cb(const AKROS_bridge_msgs::motor_cmd& cmd_){
-    // motor_statusに書き込むので排他処理
+// motor_cmdをint値に変換してmotor_statusに格納
+void AKROS_bridge_converter::unpack_cmd(const AKROS_bridge_msgs::motor_cmd_single& cmd_){
     std::lock_guard<std::mutex> lock(motor_mutex);
-    for(uint8_t i=0; i<motor_num; i++){
-        motor[i].CAN_ID       = cmd_.motor[i].CAN_ID;
-        motor[i].position_ref = cmd_.motor[i].position;
-        motor[i].velocity_ref = cmd_.motor[i].velocity;
-        motor[i].effort_ref   = cmd_.motor[i].effort;
-        motor[i].Kp           = cmd_.motor[i].Kp;
-        motor[i].Kd           = cmd_.motor[i].Kd;
+
+    uint8_t index_ = find_index(cmd_.CAN_ID);
+    motor[index_].position_ref = float_to_uint(fminf(fmaxf(P_MIN, cmd_.position), P_MAX), P_MIN, P_MAX, POSITION_BIT_NUM);
+    motor[index_].velocity_ref = float_to_uint(fminf(fmaxf(P_MIN, cmd_.velocity), P_MAX), P_MIN, P_MAX, VELOCITY_BIT_NUM);
+    motor[index_].effort_ref   = float_to_uint(fminf(fmaxf(P_MIN, cmd_.effort), P_MAX), P_MIN, P_MAX, EFFORT_BIT_NUM);
+    motor[index_].Kp           = float_to_uint(fminf(fmaxf(P_MIN, cmd_.Kp), P_MAX), P_MIN, P_MAX, KP_BIT_NUM);
+    motor[index_].Kd           = float_to_uint(fminf(fmaxf(P_MIN, cmd_.Kd), P_MAX), P_MIN, P_MAX, KD_BIT_NUM);
+}
+
+
+// motor_can_replyをそのままmotor_statusに格納
+void AKROS_bridge_converter::unpack_can_reply(const AKROS_bridge_msgs::motor_can_reply_single& can_reply_){
+    std::lock_guard<std::mutex> lock(motor_mutex);
+    uint8_t index_ = find_index(can_reply_.CAN_ID);
+    motor[index_].CAN_ID   = can_reply_.CAN_ID;
+    motor[index_].position = can_reply_.position;
+    motor[index_].velocity = can_reply_.velocity;
+    motor[index_].effort   = can_reply_.effort;
+}
+
+
+// motor_cmdを受け取ってmotor_statusに保存
+void AKROS_bridge_converter::motor_cmd_Cb(const AKROS_bridge_msgs::motor_cmd::ConstPtr& cmd_){
+    for(uint8_t i=0; i<cmd_->motor.size(); i++){
+        unpack_cmd(cmd_->motor[i]);
     }
 }
 
-// /can_replyを受け取って実数値に変換し，motor_statusに格納
-void AKROS_bridge_converter::can_reply_Cb(const AKROS_bridge_msgs::motor_can_reply& can_reply_){
-    // motor_statusに書き込むので排他処理
-    std::lock_guard<std::mutex> lock(motor_mutex);
 
-    // どうやって変換しようか？
-    for(uint8_t i=0; i<motor_num; i++){
-        unpack_can_reply(can_reply_.motor[i]);
+// /can_replyを受け取って実数値に変換し，motor_statusに格納
+void AKROS_bridge_converter::can_reply_Cb(const AKROS_bridge_msgs::motor_can_reply::ConstPtr& can_reply_){
+    for(uint8_t i=0; i<can_reply_->motor.size(); i++){
+        unpack_can_reply(can_reply_->motor[i]);
     }
 }
 
@@ -138,6 +140,7 @@ bool AKROS_bridge_converter::exit_CM_Cb(AKROS_bridge_msgs::exit_control_mode::Re
     }
 }
 
+
 // 
 bool AKROS_bridge_converter::set_PZ_Cb(AKROS_bridge_msgs::set_position_zero::Request& req_, AKROS_bridge_msgs::set_position_zero::Response& res_){
     motor_config_srv.request.CAN_ID = req_.CAN_ID;
@@ -154,6 +157,7 @@ bool AKROS_bridge_converter::set_PZ_Cb(AKROS_bridge_msgs::set_position_zero::Req
 
     return true;
 }
+
 
 // motor_cmdのKp，Kdを0にしてモータのサーボをOFFにする
 // → どうやって特定のモータのゲインを0にすればよいか？(requestではCAN_IDを指定)
@@ -185,6 +189,36 @@ bool AKROS_bridge_converter::motor_lock_Cb(std_srvs::Empty::Request& res_, std_s
 }
 
 
+// 微調節
+bool AKROS_bridge_converter::tweak_control_Cb(AKROS_bridge_msgs::tweak::Request& req_, AKROS_bridge_msgs::tweak::Response& res_){
+switch (req_.control){
+case TWEAK_UP:  // +1
+    motor[find_index(req_.CAN_ID)].position_ref += tweak_delta;
+    return true;
+    break;
+
+case TWEAK_DOWN:    // -1
+    motor[find_index(req_.CAN_ID)].position_ref -= tweak_delta;
+    return true;
+    break;
+
+case BIG_UP:    // +10
+    motor[find_index(req_.CAN_ID)].position_ref += big_delta;
+    return true;
+    break;
+
+case BIG_DOWN:  // -10
+    motor[find_index(req_.CAN_ID)].position_ref -= big_delta;
+    return true;
+    break;
+
+default:
+    return false;
+    break;
+}
+}
+
+
 // motor_statusの値を返す
 bool AKROS_bridge_converter::current_state_Cb(AKROS_bridge_msgs::currentState::Request& req_, AKROS_bridge_msgs::currentState::Response& res_){
     pack_reply(res_.reply, find_index(req_.CAN_ID));
@@ -193,25 +227,23 @@ bool AKROS_bridge_converter::current_state_Cb(AKROS_bridge_msgs::currentState::R
 }
 
 
-
 // CAN指令値をmotor_statusから引っ張り出して変換し，publish
 void AKROS_bridge_converter::publish_cmd(void){
-    for(uint8_t i=0; i<motor_num; i++){
+    for(uint8_t i=0; i<motor.size(); i++){
         pack_cmd(can_cmd.motor[i], i);
     }
-    
-    // servo_modeが0ならKp=Kd=0を代入
     can_pub.publish(can_cmd);
 }
 
+
 // 応答値をmotor_statusから引っ張り出してpublish
 void AKROS_bridge_converter::publish_reply(void){
-    for(uint8_t i=0; i<motor_num; i++){
+    for(uint8_t i=0; i<motor.size(); i++){
         pack_reply(reply.motor[i], i);
     }
-    
     reply_pub.publish(reply);
 }
+
 
 // モータのCAN_IDからvector<motor_status>のindexを探し出す
 uint8_t AKROS_bridge_converter::find_index(uint8_t CAN_ID_){

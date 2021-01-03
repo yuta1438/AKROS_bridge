@@ -10,6 +10,7 @@
 			"/opt/ros/melodic/lib/python2.7/dist-packages"
 		],
 		"files.associations": {
+			"*.body": "yaml",
 			"iostream": "cpp",
 			"cctype": "cpp",
 			"clocale": "cpp",
@@ -71,7 +72,12 @@
 			"set": "cpp",
 			"string": "cpp",
 			"string_view": "cpp",
-			"typeindex": "cpp"
+			"typeindex": "cpp",
+			"codecvt": "cpp",
+			"condition_variable": "cpp",
+			"forward_list": "cpp",
+			"future": "cpp",
+			"mutex": "cpp"
 		},
 		"files.exclude": {
 			"**/mbed": true
