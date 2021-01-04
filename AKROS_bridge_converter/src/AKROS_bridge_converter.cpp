@@ -1,3 +1,6 @@
+// 共有資源としてmotor_statusがあり，それをもとに書き込み，読み込みを行う．
+// AsyncSpinnerによるマルチスレッドなため，排他処理が必須！
+
 #include <AKROS_bridge_converter/AKROS_bridge_converter.h>
 
 AKROS_bridge_converter::AKROS_bridge_converter(ros::NodeHandle& nh)
@@ -37,7 +40,7 @@ void AKROS_bridge_converter::pack_cmd(AKROS_bridge_msgs::motor_can_cmd_single &c
     std::lock_guard<std::mutex> lock(motor_mutex);
     
     can_cmd_.CAN_ID   = motor[index_].CAN_ID;
-    can_cmd_.position = motor[index_].position_ref;
+    can_cmd_.position = motor[index_].position_ref - motor[index_].error;
     can_cmd_.velocity = motor[index_].velocity_ref;
     can_cmd_.effort   = motor[index_].effort_ref;
 
@@ -57,7 +60,7 @@ void AKROS_bridge_converter::pack_cmd(AKROS_bridge_msgs::motor_can_cmd_single &c
 void AKROS_bridge_converter::pack_reply(AKROS_bridge_msgs::motor_reply_single &reply_, uint8_t index_){
     std::lock_guard<std::mutex> lock(motor_mutex);
     reply_.CAN_ID   = motor[index_].CAN_ID;
-    reply_.position = uint_to_float(motor[index_].position, P_MIN, P_MAX, POSITION_BIT_NUM);
+    reply_.position = uint_to_float(motor[index_].position + motor[index_].error, P_MIN, P_MAX, POSITION_BIT_NUM);
     reply_.velocity = uint_to_float(motor[index_].velocity, V_MIN, V_MAX, VELOCITY_BIT_NUM);
     reply_.effort   = uint_to_float(motor[index_].effort,   T_MIN, T_MAX, EFFORT_BIT_NUM);
 
@@ -132,6 +135,7 @@ bool AKROS_bridge_converter::enter_CM_Cb(AKROS_bridge_msgs::enter_control_mode::
         }
         return true;    
     }else{
+        ROS_ERROR("Motors has been already locked !");
         res_.success = false;
         return false;
     }
@@ -151,19 +155,26 @@ bool AKROS_bridge_converter::exit_CM_Cb(AKROS_bridge_msgs::exit_control_mode::Re
 }
 
 
-// 
+// モータの原点と関節の原点との誤差値を設定
 bool AKROS_bridge_converter::set_PZ_Cb(AKROS_bridge_msgs::set_position_zero::Request& req_, AKROS_bridge_msgs::set_position_zero::Response& res_){
     motor_config_srv.request.CAN_ID = req_.CAN_ID;
     motor_config_srv.request.configration_mode = SET_POSITION_TO_ZERO;
     
+    /* deprecated!
     if(motor_config_client.call(motor_config_srv)){
         if(motor_config_srv.response.success)
             res_.success = true;
     }
-
     motor[find_index(req_.CAN_ID)].position_ref = 32767;
     motor[find_index(req_.CAN_ID)].velocity_ref = 2047;
     motor[find_index(req_.CAN_ID)].effort_ref = 2047;
+    */
+
+    // error = joint - motor
+    motor[find_index(req_.CAN_ID)].error = CENTER_POSITION - motor[find_index(req_.CAN_ID)].position;
+    motor[find_index(req_.CAN_ID)].position_ref = 0;
+
+    res_.success = true;
 
     return true;
 }
@@ -177,10 +188,20 @@ bool AKROS_bridge_converter::servo_setting_Cb(AKROS_bridge_msgs::servo_setting::
         for(uint8_t i=0; i<motor.size(); i++){
             motor[i].servo_mode = req_.servo;
         }
+
+        if(req_.servo){
+            ROS_INFO("All servo ON");
+        }else{
+            ROS_INFO("All servo OFF");
+        }
     }else{  // そうでなければ個別に設定
         motor[find_index(req_.CAN_ID)].servo_mode = req_.servo;
+        if(req_.servo){
+            ROS_INFO("Motor %d servo ON", req_.CAN_ID);
+        }else{
+            ROS_INFO("Motor %d servo OFF", req_.CAN_ID);
+        }
     }
-    
     
     res_.success = true;
     return true;
@@ -191,18 +212,25 @@ bool AKROS_bridge_converter::servo_setting_Cb(AKROS_bridge_msgs::servo_setting::
 // これ以上のモータ追加は不可能
 // 「ERROR: service [/motor_lock] responded with an error: 」が出力される
 bool AKROS_bridge_converter::motor_lock_Cb(std_srvs::Empty::Request& res_, std_srvs::Empty::Response& req_){
-    motor_config_srv.request.CAN_ID = 0;
-    motor_config_srv.request.configration_mode = INITIALIZE_LOCK;
-    initializeFlag = true;
+    if(!initializeFlag){
+        motor_config_srv.request.CAN_ID = 0;
+        motor_config_srv.request.configration_mode = INITIALIZE_LOCK;
+        initializeFlag = true;
 
-    // メモリの動的確保
-    motor_num = motor.size();
-    can_cmd.motor.resize(motor_num);
-    reply.motor.resize(motor_num);
+        // メモリの動的確保
+        motor_num = motor.size();
+        can_cmd.motor.resize(motor_num);
+        reply.motor.resize(motor_num);
 
-    if(motor_config_client.call(motor_config_srv)){
-        ROS_INFO("Motors has been locked !");
-        ROS_INFO("AsyncSpinner Start !");
+        ros::param::set("motor_num", motor_num);
+
+        if(motor_config_client.call(motor_config_srv)){
+            ROS_INFO("Motors has been locked !");
+            ROS_INFO("You have %d Motors", motor_num);
+            ROS_INFO("AsyncSpinner Start !");
+        }
+    }else{
+        ROS_ERROR("Motors have been already locked !");
     }
 }
 
@@ -218,16 +246,31 @@ case TWEAK_UP:  // +1
 
 case TWEAK_DOWN:    // -1
     motor[find_index(req_.CAN_ID)].position_ref -= tweak_delta;
+    res_.success = true;
     return true;
     break;
 
-case BIG_UP:    // +10
+case UP:    // +10
+    motor[find_index(req_.CAN_ID)].position_ref += delta;
+    res_.success = true;
+    return true;
+    break;
+
+case DOWN:  // -10
+    motor[find_index(req_.CAN_ID)].position_ref -= delta;
+    res_.success = true;
+    return true;
+    break;
+
+case BIG_UP:    // +100
     motor[find_index(req_.CAN_ID)].position_ref += big_delta;
+    res_.success = true;
     return true;
     break;
 
-case BIG_DOWN:  // -10
+case BIG_DOWN:  // -100
     motor[find_index(req_.CAN_ID)].position_ref -= big_delta;
+    res_.success = true;
     return true;
     break;
 
