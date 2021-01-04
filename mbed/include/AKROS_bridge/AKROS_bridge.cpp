@@ -4,10 +4,10 @@ AKROS_bridge::AKROS_bridge(ros::NodeHandle* n_)
   : green_led(GREEN_LED_PIN),
     yellow_led(YELLOW_LED_PIN),
     red_led(RED_LED_PIN),
-    tweak_toggle1(TWEAK_TOGGLE1_PIN),
-    tweak_toggle2(TWEAK_TOGGLE2_PIN),
-    tweak_tact_up(TWEAK_TACT_UP_PIN),
-    tweak_tact_down(TWEAK_TACT_DOWN_PIN),
+    // tweak_toggle1(TWEAK_TOGGLE1_PIN),
+    // tweak_toggle2(TWEAK_TOGGLE2_PIN),
+    // tweak_tact_up(TWEAK_TACT_UP_PIN),
+    // tweak_tact_down(TWEAK_TACT_DOWN_PIN),
     can_reply_pub("can_reply", &can_reply_msg),
     can_cmd_sub("can_cmd", &AKROS_bridge::can_cmd_Cb, this),
     motor_config_srv("motor_config", &AKROS_bridge::motor_config_Cb, this)
@@ -22,6 +22,10 @@ AKROS_bridge::AKROS_bridge(ros::NodeHandle* n_)
     wait_ms(10);
 }
 
+
+AKROS_bridge::~AKROS_bridge(void){
+    delete[] can_reply_msg.motor;
+}
 
 // モータCAN指令に対するsubscriberのコールバック関数
 // 指令を受け取ったらcan_controllerクラスのメンバ変数（motor）に格納
@@ -78,13 +82,6 @@ void AKROS_bridge::motor_config_Cb(const AKROS_bridge_msgs::motor_config::Reques
             green_led = 1;
             res_.success = true;
             break;
-
-        case TWEAK_MODE_ON:
-            yellow_led = 1;
-
-
-        case TWEAK_MODE_OFF:
-            yellow_led = 0;
 
         default:
             res_.success = false;
