@@ -1,24 +1,24 @@
 #include <AKROS_bridge.h>
 
 AKROS_bridge::AKROS_bridge(ros::NodeHandle* n_)
-  : Nucleo_led(LED1),
-    tweak_toggle(TWEAK_TOGGLE_PIN),
+  : green_led(GREEN_LED_PIN),
+    yellow_led(YELLOW_LED_PIN),
+    red_led(RED_LED_PIN),
+    tweak_toggle1(TWEAK_TOGGLE1_PIN),
+    tweak_toggle2(TWEAK_TOGGLE2_PIN),
     tweak_tact_up(TWEAK_TACT_UP_PIN),
     tweak_tact_down(TWEAK_TACT_DOWN_PIN),
     can_reply_pub("can_reply", &can_reply_msg),
     can_cmd_sub("can_cmd", &AKROS_bridge::can_cmd_Cb, this),
-    motor_config_srv("motor_config", &AKROS_bridge::motor_config_Cb, this),
-    currentState_srv("current_state", &AKROS_bridge::currentState_Cb, this)
-    {
+    motor_config_srv("motor_config", &AKROS_bridge::motor_config_Cb, this)
+{
     wait_ms(10);
     nh_priv = n_;
-    Nucleo_led = 0;
     
     // 各種トピック，サービスの設定
     nh_priv->advertise(can_reply_pub);
     nh_priv->subscribe(can_cmd_sub);
     nh_priv->advertiseService(motor_config_srv);
-    nh_priv->advertiseService(currentState_srv);
     wait_ms(10);
 }
 
@@ -27,7 +27,7 @@ AKROS_bridge::AKROS_bridge(ros::NodeHandle* n_)
 // 指令を受け取ったらcan_controllerクラスのメンバ変数（motor）に格納
 void AKROS_bridge::can_cmd_Cb(const AKROS_bridge_msgs::motor_can_cmd& cmd_){
     for(uint8_t i=0; i<can_controller.getMotorNum(); i++){
-        uint8_t index_ = can_controller.find_index(cmd_.motor[i].id);
+        uint8_t index_ = can_controller.find_index(cmd_.motor[i].CAN_ID);
         can_controller.motor[index_].position_ref = cmd_.motor[i].position;
         can_controller.motor[index_].velocity_ref = cmd_.motor[i].velocity;
         can_controller.motor[index_].effort_ref   = cmd_.motor[i].effort;
@@ -43,7 +43,7 @@ void AKROS_bridge::can_cmd_Cb(const AKROS_bridge_msgs::motor_can_cmd& cmd_){
 // 2 -> exit_control_mode
 // 3 -> set_position_to_zero
 // 4 -> initialize_lock
-// 5 -> servo Off
+// 5 -> 
 void AKROS_bridge::motor_config_Cb(const AKROS_bridge_msgs::motor_config::Request& req_, AKROS_bridge_msgs::motor_config::Response& res_){
     __disable_irq();
     switch(req_.configration_mode){
@@ -75,10 +75,11 @@ void AKROS_bridge::motor_config_Cb(const AKROS_bridge_msgs::motor_config::Reques
             can_reply_msg.motor = new AKROS_bridge_msgs::motor_can_reply::_motor_type[can_reply_msg.motor_length];
 
             can_controller.setInitializeFlag(true);
-            Nucleo_led = 1;
+            green_led = 1;
             res_.success = true;
             break;
 
+<<<<<<< HEAD
         case SERVO_OFF: 
             can_controller.setInitializeFlag(false);
             // can_controller.detach();
@@ -92,6 +93,14 @@ void AKROS_bridge::motor_config_Cb(const AKROS_bridge_msgs::motor_config::Reques
             // can_controller.attach();
             can_controller.setInitializeFlag(true);
             break;
+=======
+        case TWEAK_MODE_ON:
+            yellow_led = 1;
+
+
+        case TWEAK_MODE_OFF:
+            yellow_led = 0;
+>>>>>>> develop
 
         default:
             res_.success = false;
@@ -100,9 +109,9 @@ void AKROS_bridge::motor_config_Cb(const AKROS_bridge_msgs::motor_config::Reques
     __enable_irq();
 }
 
-
 // 現在のモータ情報を返す
 // Clientのcallでは必ずif(service.call())とすること！
+/*
 void AKROS_bridge::currentState_Cb(const AKROS_bridge_msgs::currentState::Request& req_, AKROS_bridge_msgs::currentState::Response& res_){
    if(can_controller.find_index(req_.CAN_ID) != ERROR_VALUE){
        can_controller.unpack_reply(res_.reply, req_.CAN_ID);
@@ -114,7 +123,7 @@ void AKROS_bridge::currentState_Cb(const AKROS_bridge_msgs::currentState::Reques
        res_.reply.effort   = -1.0;
        res_.success = false;
    }
-}
+}*/
 
 
 // メインで回す部分
@@ -122,23 +131,16 @@ void AKROS_bridge::currentState_Cb(const AKROS_bridge_msgs::currentState::Reques
 // モータにcan_cmdを送信
 void AKROS_bridge::loop(void){
     if(can_controller.getInitializeFlag()){
+        __disable_irq();
         for(uint8_t i=0; i<can_controller.getMotorNum(); i++){
-            // 割り込み禁止
-            // __disable_irq();
-
-            // 
-            if(can_controller.motor[i].control_mode){
-                can_controller.can_send(i);
-            }
-            // 割り込み許可
-            // __enable_irq();
-
             // can_reply_pub
-            can_reply_msg.motor[i].id = can_controller.motor[i].id;
+            can_reply_msg.motor[i].CAN_ID = can_controller.motor[i].CAN_ID;
             can_reply_msg.motor[i].position = can_controller.motor[i].position;
             can_reply_msg.motor[i].velocity = can_controller.motor[i].velocity;
             can_reply_msg.motor[i].effort   = can_controller.motor[i].effort;
+            can_controller.can_send(i);
         }
+        __enable_irq();
         can_reply_pub.publish(&can_reply_msg);
     }
     else{

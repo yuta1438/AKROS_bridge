@@ -63,7 +63,14 @@ add_message_files(
 add_service_files(
   FILES
   motor_config.srv
+  enter_control_mode.srv
+  exit_control_mode.srv
+  set_position_zero.srv
+  servo_setting.srv
+  tweak.srv
+
   currentState.srv
+  currentState_can.srv
 )
 
 ## Generate actions in the 'action' folder

@@ -11,6 +11,7 @@ find_package(catkin REQUIRED COMPONENTS
   AKROS_bridge_msgs
   roscpp
   std_msgs
+  std_srvs
 )
 
 ## System dependencies are found with CMake's conventions
@@ -205,8 +206,10 @@ include_directories(
 ## Add folders to be run by python nosetests
 # catkin_add_nosetests(test)
 
-add_executable(test_pub src/test_pub.cpp)
-add_executable(AKROS_bridge_converter src/AKROS_bridge_converter.cpp src/basic_op.cpp src/converter.cpp)
+# add_executable(test_pub src/test_pub.cpp)
+add_executable(AKROS_bridge_converter src/main.cpp src/basic_op.cpp src/AKROS_bridge_converter.cpp)
 
-target_link_libraries(test_pub ${catkin_LIBRARIES})
+add_dependencies(AKROS_bridge_converter  ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+
+# target_link_libraries(test_pub ${catkin_LIBRARIES})
 target_link_libraries(AKROS_bridge_converter ${catkin_LIBRARIES})

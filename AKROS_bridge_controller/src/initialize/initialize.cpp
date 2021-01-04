@@ -14,23 +14,41 @@ int main(int argc, char** argv){
     
     // すべてのモータに対して制御モードONに
     motor_config_srv.request.configration_mode = ENTER_CONTROL_MODE;
-    for(uint8_t id=1; id<=2; id++){
-        motor_config_srv.request.CAN_ID = id;
-        motor_config_client.call(motor_config_srv);
-
+    motor_config_srv.request.CAN_ID = 1;
+    if(motor_config_client.call(motor_config_srv)){
         // 失敗している！
         if(motor_config_srv.response.success){
-            ROS_INFO("MOTOR %d initialized", id);
+            ROS_INFO("MOTOR %d initialized", 1);
+        }else{
+            ROS_ERROR("MOTOR %d Initialization Failed", 1);
+        }
+    }
+
+    motor_config_srv.request.configration_mode = ENTER_CONTROL_MODE;
+    motor_config_srv.request.CAN_ID = 2;
+    if(motor_config_client.call(motor_config_srv)){
+        // 失敗している！
+        if(motor_config_srv.response.success){
+            ROS_INFO("MOTOR %d initialized", 2);
+        }else{
+            ROS_ERROR("MOTOR %d Initialization Failed", 2);
         }
     }
 
     // initialize_lockをかけてモータ個数を確定
     // 必ずこれを実行すること！
     motor_config_srv.request.configration_mode = INITIALIZE_LOCK;
-    // motor_config_srv.request.CAN_ID = 0;
-    motor_config_client.call(motor_config_srv);
+    motor_config_srv.request.CAN_ID = 0;
+
+    if(motor_config_client.call(motor_config_srv)){
+        if(motor_config_srv.response.success){
+            ROS_INFO("Motor Initialization Finished !");
+        }else{
+            ROS_ERROR("Motor Initialization Failed !");
+        }
+    }
     
-    ROS_INFO("Motor Initialization Finished !");
+    
 
     return 0;
 }
