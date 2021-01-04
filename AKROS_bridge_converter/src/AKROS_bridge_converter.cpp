@@ -161,9 +161,9 @@ bool AKROS_bridge_converter::set_PZ_Cb(AKROS_bridge_msgs::set_position_zero::Req
             res_.success = true;
     }
 
-    motor[find_index(req_.CAN_ID)].position_ref = 0.0;
-    motor[find_index(req_.CAN_ID)].velocity_ref = 0.0;
-    motor[find_index(req_.CAN_ID)].effort_ref = 0.0;
+    motor[find_index(req_.CAN_ID)].position_ref = 32767;
+    motor[find_index(req_.CAN_ID)].velocity_ref = 2047;
+    motor[find_index(req_.CAN_ID)].effort_ref = 2047;
 
     return true;
 }
@@ -172,7 +172,16 @@ bool AKROS_bridge_converter::set_PZ_Cb(AKROS_bridge_msgs::set_position_zero::Req
 // motor_cmdのKp，Kdを0にしてモータのサーボをOFFにする
 // → どうやって特定のモータのゲインを0にすればよいか？(requestではCAN_IDを指定)
 bool AKROS_bridge_converter::servo_setting_Cb(AKROS_bridge_msgs::servo_setting::Request& req_, AKROS_bridge_msgs::servo_setting::Response& res_){
-    motor[find_index(req_.CAN_ID)].servo_mode = req_.servo;
+    // CAN_ID = 0ならすべてのモータに対して一括設定
+    if(req_.CAN_ID == 0){
+        for(uint8_t i=0; i<motor.size(); i++){
+            motor[i].servo_mode = req_.servo;
+        }
+    }else{  // そうでなければ個別に設定
+        motor[find_index(req_.CAN_ID)].servo_mode = req_.servo;
+    }
+    
+    
     res_.success = true;
     return true;
 }
@@ -203,6 +212,7 @@ bool AKROS_bridge_converter::tweak_control_Cb(AKROS_bridge_msgs::tweak::Request&
 switch (req_.control){
 case TWEAK_UP:  // +1
     motor[find_index(req_.CAN_ID)].position_ref += tweak_delta;
+    res_.success = true;
     return true;
     break;
 

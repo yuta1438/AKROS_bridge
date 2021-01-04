@@ -17,6 +17,8 @@ int main(int argc, char** argv){
     // spinner.start();
 
     while(ros::ok()){
+        converter.publish_cmd();
+        converter.publish_reply();
         loop_rate.sleep();
     }
 
