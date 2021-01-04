@@ -79,28 +79,12 @@ void AKROS_bridge::motor_config_Cb(const AKROS_bridge_msgs::motor_config::Reques
             res_.success = true;
             break;
 
-<<<<<<< HEAD
-        case SERVO_OFF: 
-            can_controller.setInitializeFlag(false);
-            // can_controller.detach();
-            // set servo of the motor OFF (Kp = Kd = 0)
-            if(can_controller.find_index(req_.CAN_ID) != ERROR_VALUE){
-                wait_ms(5);
-                can_controller.motor[can_controller.find_index(req_.CAN_ID)].Kp = 0;
-                can_controller.motor[can_controller.find_index(req_.CAN_ID)].Kd = 0;
-                res_.success = true;
-            }
-            // can_controller.attach();
-            can_controller.setInitializeFlag(true);
-            break;
-=======
         case TWEAK_MODE_ON:
             yellow_led = 1;
 
 
         case TWEAK_MODE_OFF:
             yellow_led = 0;
->>>>>>> develop
 
         default:
             res_.success = false;
