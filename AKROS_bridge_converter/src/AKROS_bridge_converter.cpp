@@ -172,7 +172,7 @@ bool AKROS_bridge_converter::set_PZ_Cb(AKROS_bridge_msgs::set_position_zero::Req
 
     // error = joint - motor
     motor[find_index(req_.CAN_ID)].error = CENTER_POSITION - motor[find_index(req_.CAN_ID)].position;
-    motor[find_index(req_.CAN_ID)].position_ref = 0;
+    motor[find_index(req_.CAN_ID)].position_ref = CENTER_POSITION;
 
     res_.success = true;
 
