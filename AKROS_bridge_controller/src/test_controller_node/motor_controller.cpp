@@ -8,7 +8,7 @@
 #include <AKROS_bridge_msgs/currentState.h>
 #define MOTOR_NUM  2    // rosparamで読み取れるようにしたい
 
-static const double endTime = 15.0; // [s]
+static const double endTime = 10.0; // [s]
 static const double control_frequency = 50.0;  // [Hz]
 
 static const double wave_frequency[2] = {1.0, 0.25};   // [Hz]
@@ -36,6 +36,7 @@ int main(int argc, char** argv){
 
     for(int i=0; i<MOTOR_NUM; i++){
         q_init[i] = 0;
+        q_old[i] = 0;
     }
 
     ROS_INFO("Loading current position...");
@@ -52,7 +53,9 @@ int main(int argc, char** argv){
     }
     */
 
+
     ROS_INFO("Finish loading current position...");
+
     float omega[2];
     omega[0] = 2*M_PI*wave_frequency[0];
     omega[1] = 2*M_PI*wave_frequency[1];
@@ -74,12 +77,16 @@ int main(int argc, char** argv){
     while(ros::ok()){
         double current_time = (ros::Time::now() - t_start).toSec(); // 現在時刻
 
-        cmd.motor[0].position = (amplitude[0] + q_init[0]) + amplitude[0] * cos(omega[0]*current_time - M_PI);
-        cmd.motor[1].position = (amplitude[1] + q_init[1]) + amplitude[1] * cos(omega[1]*current_time - M_PI);
+        for(uint8_t i=0; i<MOTOR_NUM; i++){
+            cmd.motor[i].position = (amplitude[i] + q_init[i]) + amplitude[i] * cos(omega[i]*current_time - M_PI);
+            cmd.motor[i].velocity = (cmd.motor[i].position - q_old[i]) * control_frequency;
+            q_old[i] = cmd.motor[i].position;
+        }
         
+        /*
         cmd.motor[0].velocity = -omega[0]*amplitude[0]*sin(omega[0]*current_time-M_PI);
         cmd.motor[1].velocity = -omega[1]*amplitude[1]*sin(omega[1]*current_time-M_PI);
-
+        */
 
         // 時間が来たらpublishをやめる
         if(current_time <= endTime){

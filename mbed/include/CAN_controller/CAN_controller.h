@@ -35,9 +35,6 @@ public:
     // 可能ならAKROS_bridgeに組み込みたいが...
     std::vector<motor_status> motor;
 
-    // Only use for motor_config_service
-    void unpack_reply(AKROS_bridge_msgs::motor_reply_single&, uint8_t);
-
     bool getInitializeFlag(void);
     void setInitializeFlag(bool);
 

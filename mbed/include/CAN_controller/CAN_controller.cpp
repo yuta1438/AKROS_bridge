@@ -46,17 +46,6 @@ void CAN_controller::deserialize_reply(const CANMessage& msg_){
 }
 
 
-// 現在のモータ状況を返す
-// motor_statusから情報を引き出す
-void CAN_controller::unpack_reply(AKROS_bridge_msgs::motor_reply_single& reply_, uint8_t CAN_ID_){
-    uint8_t id_ = find_index(CAN_ID_);
-    
-    reply_.CAN_ID = motor[id_].CAN_ID;
-    reply_.position = uint_to_float(motor[id_].position, P_MIN, P_MAX, POSITION_BIT_NUM);
-    reply_.velocity = uint_to_float(motor[id_].velocity, V_MIN, V_MAX, VELOCITY_BIT_NUM);
-    reply_.effort   = uint_to_float(motor[id_].effort, T_MIN, T_MAX, EFFORT_BIT_NUM);
-}
-
 
 // モータから受け取った情報をmotor_statusに格納
 void CAN_controller::can_send(uint8_t index_){

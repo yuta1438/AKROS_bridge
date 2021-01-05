@@ -23,8 +23,8 @@ private:
     DigitalOut red_led; 
 
     // 微調節モード用
-    DigitalIn   tweak_toggle1, tweak_toggle2;   // トグルスイッチ
-    DigitalIn   tweak_tact_up, tweak_tact_down; // タクトスイッチ
+    // DigitalIn   tweak_toggle1, tweak_toggle2;   // トグルスイッチ
+    // DigitalIn   tweak_tact_up, tweak_tact_down; // タクトスイッチ
 
     CAN_controller can_controller;  // CAN通信に関するクラス
     
@@ -49,7 +49,7 @@ private:
 
 public:
     AKROS_bridge(ros::NodeHandle*);
-    ~AKROS_bridge(void){};
+    ~AKROS_bridge(void);
     void loop(void);
 };
 #endif
