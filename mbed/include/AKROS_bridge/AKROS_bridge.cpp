@@ -20,6 +20,7 @@ AKROS_bridge::AKROS_bridge(ros::NodeHandle* n_)
     nh_priv->subscribe(can_cmd_sub);
     nh_priv->advertiseService(motor_config_srv);
     wait_ms(10);
+    red_led = 1;
 }
 
 
@@ -57,6 +58,9 @@ void AKROS_bridge::motor_config_Cb(const AKROS_bridge_msgs::motor_config::Reques
             if(!can_controller.getInitializeFlag()){
                 can_controller.add_motor(req_.CAN_ID);
                 can_controller.enter_control_mode(req_.CAN_ID);
+                red_led = 0;
+                yellow_led = 1;
+                green_led = 0;
                 res_.success = true;
             }
             break;
@@ -79,6 +83,8 @@ void AKROS_bridge::motor_config_Cb(const AKROS_bridge_msgs::motor_config::Reques
             can_reply_msg.motor = new AKROS_bridge_msgs::motor_can_reply::_motor_type[can_reply_msg.motor_length];
 
             can_controller.setInitializeFlag(true);
+            red_led = 0;
+            yellow_led = 0;
             green_led = 1;
             res_.success = true;
             break;

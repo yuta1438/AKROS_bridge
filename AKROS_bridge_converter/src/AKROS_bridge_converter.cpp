@@ -181,7 +181,7 @@ bool AKROS_bridge_converter::set_PZ_Cb(AKROS_bridge_msgs::set_position_zero::Req
 
 
 // motor_cmdのKp，Kdを0にしてモータのサーボをOFFにする
-// → どうやって特定のモータのゲインを0にすればよいか？(requestではCAN_IDを指定)
+// サーボOFF時に実数目標値を0（整数値ではCENTER_〇〇）に設定
 bool AKROS_bridge_converter::servo_setting_Cb(AKROS_bridge_msgs::servo_setting::Request& req_, AKROS_bridge_msgs::servo_setting::Response& res_){
     // CAN_ID = 0ならすべてのモータに対して一括設定
     if(req_.CAN_ID == 0){
@@ -193,6 +193,12 @@ bool AKROS_bridge_converter::servo_setting_Cb(AKROS_bridge_msgs::servo_setting::
             ROS_INFO("All servo ON");
         }else{
             ROS_INFO("All servo OFF");
+            // 指令値をすべて0に！
+            for(size_t i=0; i<motor.size(); i++){
+                motor[i].position_ref = CENTER_POSITION;
+                motor[i].velocity_ref = CENTER_VELOCITY;
+                motor[i].effort_ref = CENTER_EFFORT;
+            }
         }
     }else{  // そうでなければ個別に設定
         motor[find_index(req_.CAN_ID)].servo_mode = req_.servo;
@@ -200,6 +206,9 @@ bool AKROS_bridge_converter::servo_setting_Cb(AKROS_bridge_msgs::servo_setting::
             ROS_INFO("Motor %d servo ON", req_.CAN_ID);
         }else{
             ROS_INFO("Motor %d servo OFF", req_.CAN_ID);
+            motor[find_index(req_.CAN_ID)].position_ref = CENTER_POSITION;
+            motor[find_index(req_.CAN_ID)].velocity_ref = CENTER_VELOCITY;
+            motor[find_index(req_.CAN_ID)].effort_ref = CENTER_EFFORT;
         }
     }
     
