@@ -83,7 +83,7 @@ void AKROS_bridge::motor_config_Cb(const AKROS_bridge_msgs::motor_config::Reques
             can_reply_msg.motor = new AKROS_bridge_msgs::motor_can_reply::_motor_type[can_reply_msg.motor_length];
             MotorNum = can_controller.getMotorNum();
             
-            // can_controller.setInitializeFlag(true); // ここを消すとMismatchが表示されない
+            can_controller.setInitializeFlag(true); // ここを消すとMismatchが表示されない
             wait_ms(10);
             red_led = 0;
             yellow_led = 0;
@@ -126,7 +126,7 @@ void AKROS_bridge::can_send(void){
 // PCにmotor_replyをPublish
 // モータにcan_cmdを送信
 void AKROS_bridge::publish(void){
-    __disable_irq();
+    //__disable_irq();
    if(can_controller.getInitializeFlag()){
         for(uint8_t i=0; i<MotorNum; i++){
             // can_reply_pub
@@ -137,6 +137,6 @@ void AKROS_bridge::publish(void){
         }
         can_reply_pub.publish(&can_reply_msg);
    }
-    __enable_irq();
-    //wait_ms(10);    // ここを変えるとmismatchedエラー．
+    //__enable_irq();
+    wait_ms(10);    // ここを変えるとmismatchedエラー．
 }
