@@ -237,9 +237,11 @@ bool AKROS_bridge_converter::motor_lock_Cb(std_srvs::Empty::Request& res_, std_s
             ROS_INFO("Motors has been locked !");
             ROS_INFO("You have %d Motors", motor_num);
             ROS_INFO("AsyncSpinner Start !");
+            return true;
         }
     }else{
         ROS_ERROR("Motors have been already locked !");
+        return false;
     }
 }
 

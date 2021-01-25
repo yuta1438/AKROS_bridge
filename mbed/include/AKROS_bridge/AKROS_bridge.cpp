@@ -31,7 +31,7 @@ AKROS_bridge::~AKROS_bridge(void){
 // モータCAN指令に対するsubscriberのコールバック関数
 // 指令を受け取ったらcan_controllerクラスのメンバ変数（motor）に格納
 void AKROS_bridge::can_cmd_Cb(const AKROS_bridge_msgs::motor_can_cmd& cmd_){
-    for(uint8_t i=0; i<can_controller.getMotorNum(); i++){
+    for(uint8_t i=0; i<MotorNum; i++){
         uint8_t index_ = can_controller.find_index(cmd_.motor[i].CAN_ID);
         can_controller.motor[index_].position_ref = cmd_.motor[i].position;
         can_controller.motor[index_].velocity_ref = cmd_.motor[i].velocity;
@@ -81,11 +81,14 @@ void AKROS_bridge::motor_config_Cb(const AKROS_bridge_msgs::motor_config::Reques
             // Publishするトピック用にメモリ確保
             can_reply_msg.motor_length = can_controller.getMotorNum();
             can_reply_msg.motor = new AKROS_bridge_msgs::motor_can_reply::_motor_type[can_reply_msg.motor_length];
-
-            can_controller.setInitializeFlag(true);
+            MotorNum = can_controller.getMotorNum();
+            
+            // can_controller.setInitializeFlag(true); // ここを消すとMismatchが表示されない
+            wait_ms(10);
             red_led = 0;
             yellow_led = 0;
             green_led = 1;
+            ticker.attach(this, &AKROS_bridge::can_send, 0.001);
             res_.success = true;
             break;
 
@@ -113,24 +116,27 @@ void AKROS_bridge::currentState_Cb(const AKROS_bridge_msgs::currentState::Reques
 }*/
 
 
+void AKROS_bridge::can_send(void){
+    for(uint8_t i=0; i<MotorNum; i++){
+        can_controller.can_send(i);
+    }
+}
+
 // メインで回す部分
 // PCにmotor_replyをPublish
 // モータにcan_cmdを送信
-void AKROS_bridge::loop(void){
-    if(can_controller.getInitializeFlag()){
-        __disable_irq();
-        for(uint8_t i=0; i<can_controller.getMotorNum(); i++){
+void AKROS_bridge::publish(void){
+    __disable_irq();
+   if(can_controller.getInitializeFlag()){
+        for(uint8_t i=0; i<MotorNum; i++){
             // can_reply_pub
             can_reply_msg.motor[i].CAN_ID = can_controller.motor[i].CAN_ID;
             can_reply_msg.motor[i].position = can_controller.motor[i].position;
             can_reply_msg.motor[i].velocity = can_controller.motor[i].velocity;
             can_reply_msg.motor[i].effort   = can_controller.motor[i].effort;
-            can_controller.can_send(i);
         }
-        __enable_irq();
         can_reply_pub.publish(&can_reply_msg);
-    }
-    else{
-        wait_ms(10);
-    }
+   }
+    __enable_irq();
+    //wait_ms(10);    // ここを変えるとmismatchedエラー．
 }

@@ -20,7 +20,10 @@ private:
     // BusOut leds;
     DigitalOut green_led;
     DigitalOut yellow_led;
-    DigitalOut red_led; 
+    DigitalOut red_led;
+
+    Ticker ticker;
+    uint8_t MotorNum;
 
     // 微調節モード用
     // DigitalIn   tweak_toggle1, tweak_toggle2;   // トグルスイッチ
@@ -41,7 +44,7 @@ private:
     // callback functions
     void can_cmd_Cb(const AKROS_bridge_msgs::motor_can_cmd&);
     void motor_config_Cb(const AKROS_bridge_msgs::motor_config::Request&, AKROS_bridge_msgs::motor_config::Response&);
-
+    void can_send();
     // functions
     // タクトスイッチで微調節する
     void incrementPosition(void);
@@ -50,6 +53,6 @@ private:
 public:
     AKROS_bridge(ros::NodeHandle*);
     ~AKROS_bridge(void);
-    void loop(void);
+    void publish(void);
 };
 #endif
