@@ -18,7 +18,7 @@ int main(void){
 
     while(1){
         // akros->loop();
-        wait_us(100);    // 早すぎるとダメ
+        wait_ms(10);    // 早すぎるとダメ
         akros->publish();
         nh.spinOnce();
     }
