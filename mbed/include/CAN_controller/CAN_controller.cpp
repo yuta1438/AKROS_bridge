@@ -144,10 +144,12 @@ uint8_t CAN_controller::find_index(uint8_t CAN_ID_){
 
 // モータ個数がすでに決定したかどうか
 bool CAN_controller::getInitializeFlag(void){
+    flag_mutex.lock();
     return initializeFlag;
 }
 
 
 void CAN_controller::setInitializeFlag(bool b){
+    flag_mutex.lock();
     initializeFlag = b;
 }

@@ -3,6 +3,7 @@
 
 #include "mbed.h"
 #include "CAN.h"
+#include "rtos.h"
 #include <vector>
 #include <motor_status/motor_status.h>
 #include <AKROS_bridge_msgs/motor_can_cmd_single.h>
@@ -22,7 +23,8 @@
 class CAN_controller{
 private:
     CAN can;
-    bool initializeFlag;
+    bool initializeFlag;    // mutexが必要？
+    Mutex flag_mutex;
     
     void can_Cb(void);
     void serialize_cmd(CANMessage&);

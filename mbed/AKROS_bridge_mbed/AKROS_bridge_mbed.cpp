@@ -13,12 +13,12 @@ int main(void){
     nh.getHardware()->setBaud(115200);
     nh.initNode();
 
-    AKROS_bridge akros(&nh);    // インスタンス生成．NodeHandleのアドレスを渡す．
+    AKROS_bridge akros(&nh);
+    //akros = new AKROS_bridge(&nh);    // インスタンス生成．NodeHandleのアドレスを渡す．
     wait_ms(100);
 
     while(1){
-        akros.loop();
+        akros.publish();
         nh.spinOnce();
-        wait_ms(10);    // 早すぎるとダメ
     }
 }

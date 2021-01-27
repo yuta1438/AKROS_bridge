@@ -3,7 +3,7 @@
 #include <ros/ros.h>
 #include <AKROS_bridge_converter/AKROS_bridge_converter.h>
 
-#define ROS_Hz      50
+#define ROS_Hz      200
 
 
 int main(int argc, char** argv){
