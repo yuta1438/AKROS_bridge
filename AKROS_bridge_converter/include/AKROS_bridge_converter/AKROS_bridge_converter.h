@@ -50,8 +50,15 @@ static const uint8_t big_delta = 100;
 
 #define P_MIN   -95.5f
 #define P_MAX   95.5f
+/*
 #define V_MIN   -30.0f
 #define V_MAX   30.0f
+*/
+
+// for AK80-6(48V)
+#define V_MIN   -45.0
+#define V_MAX   45.0
+
 #define KP_MIN   0.0f
 #define KP_MAX   500.0f
 #define KD_MIN   0.0f
