@@ -8,7 +8,10 @@
 #define CENTER_EFFORT       2048
 
 typedef struct motor_status_{
-    uint8_t CAN_ID = 0;
+    std::string name;   // モータ名前
+    std::string model;  // モータ型番
+    
+    uint8_t CAN_ID = 0; 
     bool servo_mode = false;    // サーボ状態
     int16_t error = 0;  // モータの原点と関節の原点の誤差値
     uint16_t position = CENTER_POSITION;
@@ -19,6 +22,8 @@ typedef struct motor_status_{
     uint16_t effort_ref = CENTER_EFFORT;
     uint16_t Kp = 0;
     uint16_t Kd = 0;
+    float P_MAX;
+    float V_MAX;
 }motor_status;
 
 #endif

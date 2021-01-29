@@ -3,26 +3,63 @@
 
 #include <AKROS_bridge_converter/AKROS_bridge_converter.h>
 
-AKROS_bridge_converter::AKROS_bridge_converter(ros::NodeHandle& nh)
- : nh_priv(nh),spinner(0){
+AKROS_bridge_converter::AKROS_bridge_converter(ros::NodeHandle& nh_)
+ : nh(nh_), pnh("~"), spinner(0){
     // Topics
-    can_pub   = nh_priv.advertise<AKROS_bridge_msgs::motor_can_cmd>("can_cmd", 1);
-    reply_pub = nh_priv.advertise<AKROS_bridge_msgs::motor_reply>("motor_reply", 1);
-    cmd_sub   = nh_priv.subscribe("motor_cmd", 1, &AKROS_bridge_converter::motor_cmd_Cb, this);
-    can_sub   = nh_priv.subscribe("can_reply", 1, &AKROS_bridge_converter::can_reply_Cb, this);
+    can_pub   = nh.advertise<AKROS_bridge_msgs::motor_can_cmd>("can_cmd", 1);
+    reply_pub = nh.advertise<AKROS_bridge_msgs::motor_reply>("motor_reply", 1);
+    cmd_sub   = nh.subscribe("motor_cmd", 1, &AKROS_bridge_converter::motor_cmd_Cb, this);
+    can_sub   = nh.subscribe("can_reply", 1, &AKROS_bridge_converter::can_reply_Cb, this);
 
     // Servers
-    enter_CM_server      = nh_priv.advertiseService("enter_control_mode", &AKROS_bridge_converter::enter_CM_Cb, this);
-    exit_CM_server       = nh_priv.advertiseService("exit_control_mode", &AKROS_bridge_converter::exit_CM_Cb, this);
-    set_PZ_server        = nh_priv.advertiseService("set_position_to_zero", &AKROS_bridge_converter::set_PZ_Cb, this);
-    servo_setting_server = nh_priv.advertiseService("servo_setting", &AKROS_bridge_converter::servo_setting_Cb, this);
-    motor_lock_server    = nh_priv.advertiseService("motor_lock", &AKROS_bridge_converter::motor_lock_Cb, this);
-    current_state_server = nh_priv.advertiseService("current_state", &AKROS_bridge_converter::current_state_Cb, this);
-    tweak_control_server = nh_priv.advertiseService("tweak_control", &AKROS_bridge_converter::tweak_control_Cb, this);
+    enter_CM_server      = nh.advertiseService("enter_control_mode", &AKROS_bridge_converter::enter_CM_Cb, this);
+    exit_CM_server       = nh.advertiseService("exit_control_mode", &AKROS_bridge_converter::exit_CM_Cb, this);
+    set_PZ_server        = nh.advertiseService("set_position_to_zero", &AKROS_bridge_converter::set_PZ_Cb, this);
+    servo_setting_server = nh.advertiseService("servo_setting", &AKROS_bridge_converter::servo_setting_Cb, this);
+    motor_lock_server    = nh.advertiseService("motor_lock", &AKROS_bridge_converter::motor_lock_Cb, this);
+    current_state_server = nh.advertiseService("current_state", &AKROS_bridge_converter::current_state_Cb, this);
+    tweak_control_server = nh.advertiseService("tweak_control", &AKROS_bridge_converter::tweak_control_Cb, this);
 
     // Clients
-    motor_config_client = nh_priv.serviceClient<AKROS_bridge_msgs::motor_config>("motor_config");
+    motor_config_client = nh.serviceClient<AKROS_bridge_msgs::motor_config>("motor_config");
     
+
+    // load motor configuration file (.yaml)
+    XmlRpc::XmlRpcValue motor_list;
+    pnh.getParam("motor_list", motor_list);
+
+    ROS_ASSERT(motor_list.getType() == XmlRpc::XmlRpcValue::TypeArray);
+    
+    // add motor written in yaml file
+    for(int i=0; i<motor_list.size(); i++){
+        motor_status m;
+        
+        // check whether if necessary information written
+        if(!motor_list[i]["name"].valid() || !motor_list[i]["can_id"].valid() || !motor_list[i]["model"].valid()){
+            ROS_WARN("No name or can_id or model");
+            continue;       
+        }
+
+        // get name
+        if(motor_list[i]["name"].getType() == XmlRpc::XmlRpcValue::TypeString){
+            m.name = static_cast<std::string>(motor_list[i]["name"]);
+        }
+
+        // get CAN_ID
+        if(motor_list[i]["can_id"].getType() == XmlRpc::XmlRpcValue::TypeInt){
+            m.CAN_ID = static_cast<int>(motor_list[i]["can_id"]);
+        }
+
+        // get model of the motor
+        if(motor_list[i]["model"].getType() == XmlRpc::XmlRpcValue::TypeString){
+            m.model = static_cast<std::string>(motor_list[i]["model"]);
+        }
+        motor.push_back(m);
+    }
+
+
+
+
     initializeFlag = false;
     motor_num = 0;
     spinner.start();
@@ -219,7 +256,7 @@ bool AKROS_bridge_converter::servo_setting_Cb(AKROS_bridge_msgs::servo_setting::
 
 // モータの個数確定
 // これ以上のモータ追加は不可能
-// 「ERROR: service [/motor_lock] responded with an error: 」が出力される
+// rosparamから読み取れるようにするのでここは廃止予定
 bool AKROS_bridge_converter::motor_lock_Cb(std_srvs::Empty::Request& res_, std_srvs::Empty::Response& req_){
     if(!initializeFlag){
         motor_config_srv.request.CAN_ID = 0;

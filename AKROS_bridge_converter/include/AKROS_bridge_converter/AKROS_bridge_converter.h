@@ -48,8 +48,10 @@ static const uint8_t big_delta = 100;
 
 #define ERROR_NUM   99
 
-#define P_MIN   -95.5f
-#define P_MAX   95.5f
+#define P_MIN   -12.5f
+#define P_MAX   12.5f
+
+
 /*
 #define V_MIN   -30.0f
 #define V_MAX   30.0f
@@ -78,7 +80,8 @@ static const uint8_t big_delta = 100;
 
 class AKROS_bridge_converter{
 private:
-    ros::NodeHandle nh_priv;
+    ros::NodeHandle nh;
+    ros::NodeHandle pnh;
     bool initializeFlag;
 
     uint8_t motor_num;
@@ -134,7 +137,7 @@ private:
     uint8_t find_index(uint8_t);
 public:
     AKROS_bridge_converter(ros::NodeHandle&);
-    ~AKROS_bridge_converter(void);
+    ~AKROS_bridge_converter();
     void publish_cmd(void);
     void publish_reply(void);
 
