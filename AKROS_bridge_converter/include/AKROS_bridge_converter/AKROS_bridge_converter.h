@@ -48,31 +48,7 @@ static const uint8_t big_delta = 100;
 
 #define ERROR_NUM   99
 
-#define P_MIN   -12.5f
-#define P_MAX   12.5f
 
-
-/*
-#define V_MIN   -30.0f
-#define V_MAX   30.0f
-*/
-
-// for AK80-6(48V)
-#define V_MIN   -45.0
-#define V_MAX   45.0
-
-#define KP_MIN   0.0f
-#define KP_MAX   500.0f
-#define KD_MIN   0.0f
-#define KD_MAX   5.0f
-#define T_MIN   -18.0f
-#define T_MAX   18.0f
-
-#define POSITION_BIT_NUM    16
-#define VELOCITY_BIT_NUM    12
-#define EFFORT_BIT_NUM      12
-#define KP_BIT_NUM          12
-#define KD_BIT_NUM          12
 
 
 #define CAN_TX_DATA_LENGTH  8   // モータ指令値のDLC
