@@ -5,6 +5,7 @@
 #include <ros/ros.h>
 #include <vector>
 #include <mutex>
+#include <unistd.h>
 
 #include <AKROS_bridge_converter/motor_status.h>
 
@@ -24,9 +25,6 @@
 #include <AKROS_bridge_msgs/motor_config.h>
 #include <AKROS_bridge_msgs/tweak.h>
 #include <std_srvs/Empty.h>
-
-#include <AKROS_bridge_msgs/currentState.h>
-#include <AKROS_bridge_msgs/currentState_can.h>
 
 // Settings
 #define ENTER_CONTROL_MODE      1
@@ -56,7 +54,7 @@ static const uint8_t big_delta = 100;
 
 class AKROS_bridge_converter{
 private:
-    ros::NodeHandle nh;
+    ros::NodeHandle *nh;
     ros::NodeHandle pnh;
     bool initializeFlag;
 
@@ -91,28 +89,28 @@ private:
     ros::ServiceServer set_PZ_server;           // set_zero_position_server
     ros::ServiceServer servo_setting_server;    // set servo of the motor
     ros::ServiceServer motor_lock_server;
-    ros::ServiceServer current_state_server;
+    // ros::ServiceServer current_state_server; 
     ros::ServiceServer tweak_control_server;
 
     ros::ServiceClient motor_config_client; // モータに関する各種設定
     
-    AKROS_bridge_msgs::motor_config motor_config_srv;
+    //AKROS_bridge_msgs::motor_config motor_config_srv;
     
 
     // Callback Functions
-    bool enter_CM_Cb(AKROS_bridge_msgs::enter_control_mode::Request&, AKROS_bridge_msgs::enter_control_mode::Response&);
+    // bool enter_CM_Cb(AKROS_bridge_msgs::enter_control_mode::Request&, AKROS_bridge_msgs::enter_control_mode::Response&);
     bool exit_CM_Cb(AKROS_bridge_msgs::exit_control_mode::Request&, AKROS_bridge_msgs::exit_control_mode::Response&);
     bool set_PZ_Cb(AKROS_bridge_msgs::set_position_zero::Request&, AKROS_bridge_msgs::set_position_zero::Response&);
     bool servo_setting_Cb(AKROS_bridge_msgs::servo_setting::Request&, AKROS_bridge_msgs::servo_setting::Response&);
-    bool motor_lock_Cb(std_srvs::Empty::Request&, std_srvs::Empty::Response&);
+    // bool motor_lock_Cb(std_srvs::Empty::Request&, std_srvs::Empty::Response&);
     bool tweak_control_Cb(AKROS_bridge_msgs::tweak::Request&, AKROS_bridge_msgs::tweak::Response&);
 
     // 現在の状態を返す
-    bool current_state_Cb(AKROS_bridge_msgs::currentState::Request&, AKROS_bridge_msgs::currentState::Response&);
+    // bool current_state_Cb(AKROS_bridge_msgs::currentState::Request&, AKROS_bridge_msgs::currentState::Response&);
 
     uint8_t find_index(uint8_t);
 public:
-    AKROS_bridge_converter(ros::NodeHandle&);
+    AKROS_bridge_converter(ros::NodeHandle*);
     ~AKROS_bridge_converter();
     void publish_cmd(void);
     void publish_reply(void);

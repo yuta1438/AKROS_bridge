@@ -11,7 +11,7 @@ int main(int argc, char** argv){
     ros::NodeHandle nh;
     ros::Rate loop_rate(ROS_Hz);
 
-    AKROS_bridge_converter converter(nh);
+    AKROS_bridge_converter converter(&nh);
 
     ROS_INFO("Converter Ready !");
     // spinner.start();
