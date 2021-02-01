@@ -1,0 +1,7 @@
+motor_list:
+  - name: Motor1
+    can_id: 1
+    model: AK10-9_OLD
+  - name: Motor2
+    can_id: 2
+    model: AK80-6_OLD

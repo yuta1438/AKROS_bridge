@@ -3,28 +3,144 @@
 
 #include <AKROS_bridge_converter/AKROS_bridge_converter.h>
 
-AKROS_bridge_converter::AKROS_bridge_converter(ros::NodeHandle& nh)
- : nh_priv(nh),spinner(0){
+// ここで初期化を全て行うべき！
+AKROS_bridge_converter::AKROS_bridge_converter(ros::NodeHandle* nh_)
+ : pnh("~"), spinner(0){
+
     // Topics
-    can_pub   = nh_priv.advertise<AKROS_bridge_msgs::motor_can_cmd>("can_cmd", 1);
-    reply_pub = nh_priv.advertise<AKROS_bridge_msgs::motor_reply>("motor_reply", 1);
-    cmd_sub   = nh_priv.subscribe("motor_cmd", 1, &AKROS_bridge_converter::motor_cmd_Cb, this);
-    can_sub   = nh_priv.subscribe("can_reply", 1, &AKROS_bridge_converter::can_reply_Cb, this);
+    nh = nh_;
+    can_pub   = nh->advertise<AKROS_bridge_msgs::motor_can_cmd>("can_cmd", 1);
+    reply_pub = nh->advertise<AKROS_bridge_msgs::motor_reply>("motor_reply", 1);
+    cmd_sub   = nh->subscribe("motor_cmd", 1, &AKROS_bridge_converter::motor_cmd_Cb, this);
+    can_sub   = nh->subscribe("can_reply", 1, &AKROS_bridge_converter::can_reply_Cb, this);
 
     // Servers
-    enter_CM_server      = nh_priv.advertiseService("enter_control_mode", &AKROS_bridge_converter::enter_CM_Cb, this);
-    exit_CM_server       = nh_priv.advertiseService("exit_control_mode", &AKROS_bridge_converter::exit_CM_Cb, this);
-    set_PZ_server        = nh_priv.advertiseService("set_position_to_zero", &AKROS_bridge_converter::set_PZ_Cb, this);
-    servo_setting_server = nh_priv.advertiseService("servo_setting", &AKROS_bridge_converter::servo_setting_Cb, this);
-    motor_lock_server    = nh_priv.advertiseService("motor_lock", &AKROS_bridge_converter::motor_lock_Cb, this);
-    current_state_server = nh_priv.advertiseService("current_state", &AKROS_bridge_converter::current_state_Cb, this);
-    tweak_control_server = nh_priv.advertiseService("tweak_control", &AKROS_bridge_converter::tweak_control_Cb, this);
+    // enter_CM_server      = nh.advertiseService("enter_control_mode", &AKROS_bridge_converter::enter_CM_Cb, this);
+    exit_CM_server       = nh->advertiseService("exit_control_mode", &AKROS_bridge_converter::exit_CM_Cb, this);
+    set_PZ_server        = nh->advertiseService("set_position_to_zero", &AKROS_bridge_converter::set_PZ_Cb, this);
+    servo_setting_server = nh->advertiseService("servo_setting", &AKROS_bridge_converter::servo_setting_Cb, this);
+    //motor_lock_server    = nh.advertiseService("motor_lock", &AKROS_bridge_converter::motor_lock_Cb, this);
+    // current_state_server = nh.advertiseService("current_state", &AKROS_bridge_converter::current_state_Cb, this);
+    tweak_control_server = nh->advertiseService("tweak_control", &AKROS_bridge_converter::tweak_control_Cb, this);
 
     // Clients
-    motor_config_client = nh_priv.serviceClient<AKROS_bridge_msgs::motor_config>("motor_config");
+    motor_config_client = nh->serviceClient<AKROS_bridge_msgs::motor_config>("motor_config");
     
-    initializeFlag = false;
-    motor_num = 0;
+
+    // load motor configuration file (.yaml)
+    XmlRpc::XmlRpcValue motor_list;
+    pnh.getParam("motor_list", motor_list);
+    ROS_ASSERT(motor_list.getType() == XmlRpc::XmlRpcValue::TypeArray);
+
+    // add motor written in yaml file
+    for(int i=0; i<motor_list.size(); i++){
+        motor_status m;
+
+        // check name of the motor
+        if(!motor_list[i]["name"].valid()){
+            ROS_WARN("No name has settled !");
+            ROS_ASSERT(true);
+        }
+        // check CAN_ID 
+        if(!motor_list[i]["can_id"].valid()){
+            ROS_WARN("No CAN_ID has settled !");
+            ROS_ASSERT(true);
+        }
+        // check CAN_ID 
+        if(!motor_list[i]["model"].valid()){
+            ROS_WARN("No model has settled !");
+            ROS_ASSERT(true);
+        }
+
+        // get name
+        if(motor_list[i]["name"].getType() == XmlRpc::XmlRpcValue::TypeString){
+            m.name = static_cast<std::string>(motor_list[i]["name"]);
+        }
+        // get CAN_ID
+        if(motor_list[i]["can_id"].getType() == XmlRpc::XmlRpcValue::TypeInt){
+            m.CAN_ID = static_cast<int>(motor_list[i]["can_id"]);
+        }
+        // get model of the motor
+        if(motor_list[i]["model"].getType() == XmlRpc::XmlRpcValue::TypeString){
+            m.model = static_cast<std::string>(motor_list[i]["model"]);
+
+            // check whether if the model written in .yaml file is valid or not.
+            /*
+            if((m.model != "AK10-9") && (m.model != "AK80-6") && (m.model != "AK10-9_OLD") && (m.model != "AK80-6_OLD")){
+                ROS_WARN("Invalid motor model has settled !");
+                ROS_ASSERT(true);
+            }*/
+        }
+        ROS_INFO("Add motor name: %s, CAN_ID: %i, model: %s", m.name.c_str(), m.CAN_ID, m.model.c_str());
+        motor.push_back(m); // create new vector element
+    }
+
+    motor_num = (uint8_t)motor.size();
+
+    for(int i=0; i<motor_num; i++){
+        if(motor[i].model == "AK10-9"){
+            motor[i].P_MAX = AK10_9_P_MAX;
+            motor[i].P_MIN = AK10_9_P_MIN;
+            motor[i].V_MAX = AK10_9_V_MAX;
+            motor[i].V_MIN = AK10_9_V_MIN;
+        }
+        else if(motor[i].model == "AK80-6"){
+            motor[i].P_MAX = AK80_6_P_MAX;
+            motor[i].P_MIN = AK80_6_P_MIN;
+            motor[i].V_MAX = AK80_6_V_MAX;
+            motor[i].V_MIN = AK80_6_V_MIN;
+        }
+        else if(motor[i].model == "AK10-9_OLD"){
+            motor[i].P_MAX = AK10_9_OLD_P_MAX;
+            motor[i].P_MIN = AK10_9_OLD_P_MIN;
+            motor[i].V_MAX = AK10_9_OLD_V_MAX;
+            motor[i].V_MIN = AK10_9_OLD_V_MIN;
+        }
+        else if(motor[i].model == "AK80-6_OLD"){
+            motor[i].P_MAX = AK80_6_OLD_P_MAX;
+            motor[i].P_MIN = AK80_6_OLD_P_MIN;
+            motor[i].V_MAX = AK80_6_OLD_V_MAX;
+            motor[i].V_MIN = AK80_6_OLD_V_MIN;
+        }
+
+        // Enter control mode for each motor
+        AKROS_bridge_msgs::motor_config enter_control_srv;
+        enter_control_srv.request.CAN_ID = motor[i].CAN_ID;
+        enter_control_srv.request.configration_mode = ENTER_CONTROL_MODE;
+
+        if(motor_config_client.call(enter_control_srv)){
+            if(enter_control_srv.response.success){
+                ROS_INFO("Motor %d initialized !", motor[i].CAN_ID);
+            }else{
+                ROS_WARN("enter_control service failed !");
+            }
+        }else{
+            ROS_WARN("There is no service for enter_control_mode !");
+        }
+        usleep(100000);
+    }
+
+
+    // motor_lock for all motors
+    AKROS_bridge_msgs::motor_config motor_lock_srv;
+    motor_lock_srv.request.CAN_ID = 0;
+    motor_lock_srv.request.configration_mode = INITIALIZE_LOCK;
+    if(motor_config_client.call(motor_lock_srv)){
+        if(motor_lock_srv.response.success){
+            ROS_INFO("Motor locked !");
+        }else{
+            ROS_WARN("Motor_lock failed !");
+        }
+    }else{
+        ROS_WARN("There is no service for motor_lock !");
+    }
+    usleep(100000);
+    initializeFlag = true;
+
+    // メモリの動的確保
+    can_cmd.motor.resize(motor_num);
+    reply.motor.resize(motor_num);
+
     spinner.start();
 }
 
@@ -60,8 +176,8 @@ void AKROS_bridge_converter::pack_cmd(AKROS_bridge_msgs::motor_can_cmd_single &c
 void AKROS_bridge_converter::pack_reply(AKROS_bridge_msgs::motor_reply_single &reply_, uint8_t index_){
     std::lock_guard<std::mutex> lock(motor_mutex);
     reply_.CAN_ID   = motor[index_].CAN_ID;
-    reply_.position = uint_to_float(motor[index_].position + motor[index_].error, P_MIN, P_MAX, POSITION_BIT_NUM);
-    reply_.velocity = uint_to_float(motor[index_].velocity, V_MIN, V_MAX, VELOCITY_BIT_NUM);
+    reply_.position = uint_to_float(motor[index_].position + motor[index_].error, motor[index_].P_MIN, motor[index_].P_MAX, POSITION_BIT_NUM);
+    reply_.velocity = uint_to_float(motor[index_].velocity, motor[index_].V_MIN, motor[index_].V_MAX, VELOCITY_BIT_NUM);
     reply_.effort   = uint_to_float(motor[index_].effort,   T_MIN, T_MAX, EFFORT_BIT_NUM);
 
     //ROS_INFO("pack_reply");
@@ -73,13 +189,11 @@ void AKROS_bridge_converter::unpack_cmd(const AKROS_bridge_msgs::motor_cmd_singl
     std::lock_guard<std::mutex> lock(motor_mutex);
 
     uint8_t index_ = find_index(cmd_.CAN_ID);
-    motor[index_].position_ref = float_to_uint(fminf(fmaxf(P_MIN, cmd_.position), P_MAX), P_MIN, P_MAX, POSITION_BIT_NUM);
-    motor[index_].velocity_ref = float_to_uint(fminf(fmaxf(V_MIN, cmd_.velocity), V_MAX), V_MIN, V_MAX, VELOCITY_BIT_NUM);
+    motor[index_].position_ref = float_to_uint(fminf(fmaxf(motor[index_].P_MIN, cmd_.position), motor[index_].P_MAX), motor[index_].P_MIN, motor[index_].P_MAX, POSITION_BIT_NUM);
+    motor[index_].velocity_ref = float_to_uint(fminf(fmaxf(motor[index_].V_MIN, cmd_.velocity), motor[index_].V_MAX), motor[index_].V_MIN, motor[index_].V_MAX, VELOCITY_BIT_NUM);
     motor[index_].effort_ref   = float_to_uint(fminf(fmaxf(T_MIN, cmd_.effort), T_MAX), T_MIN, T_MAX, EFFORT_BIT_NUM);
     motor[index_].Kp           = float_to_uint(fminf(fmaxf(KP_MIN, cmd_.Kp), KP_MAX), KP_MIN, KP_MAX, KP_BIT_NUM);
     motor[index_].Kd           = float_to_uint(fminf(fmaxf(KD_MIN, cmd_.Kd), KD_MAX), KD_MIN, KD_MAX, KD_BIT_NUM);
-
-    //ROS_INFO("unpack_cmd");
 }
 
 
@@ -98,7 +212,7 @@ void AKROS_bridge_converter::unpack_can_reply(const AKROS_bridge_msgs::motor_can
 
 // motor_cmdを受け取ってmotor_statusに保存
 void AKROS_bridge_converter::motor_cmd_Cb(const AKROS_bridge_msgs::motor_cmd::ConstPtr& cmd_){
-    for(uint8_t i=0; i<cmd_->motor.size(); i++){
+    for(uint8_t i=0; i<cmd_->motor.size();i++){
         unpack_cmd(cmd_->motor[i]);
     }
     publish_cmd();
@@ -116,13 +230,17 @@ void AKROS_bridge_converter::can_reply_Cb(const AKROS_bridge_msgs::motor_can_rep
 
 // モータを追加
 // Initialize_lockが呼ばれた後は無効
+// To deprecated
+/*
 bool AKROS_bridge_converter::enter_CM_Cb(AKROS_bridge_msgs::enter_control_mode::Request& req_, AKROS_bridge_msgs::enter_control_mode::Response& res_){
     if(!initializeFlag){
         // push_back
-        motor_status motor_;
-        motor_.CAN_ID = req_.CAN_ID;
-        motor_.servo_mode = false;  // 最初はサーボOFF
-        motor.push_back(motor_);
+        motor_status m;
+        m.name = req_.name; // この変換がOKが要確認
+        m.CAN_ID = req_.CAN_ID;
+        m.model = req_.model;
+
+        motor.push_back(m);
 
         motor_config_srv.request.CAN_ID = req_.CAN_ID;
         motor_config_srv.request.configration_mode = ENTER_CONTROL_MODE;
@@ -139,14 +257,19 @@ bool AKROS_bridge_converter::enter_CM_Cb(AKROS_bridge_msgs::enter_control_mode::
         res_.success = false;
         return false;
     }
-}
+}*/
 
 
 // 操作終了
 // これを行うともう一度原点だしが必要になるので注意
+// To deprecated
 bool AKROS_bridge_converter::exit_CM_Cb(AKROS_bridge_msgs::exit_control_mode::Request& req_, AKROS_bridge_msgs::exit_control_mode::Response& res_){
+    AKROS_bridge_msgs::motor_config motor_config_srv;
     motor_config_srv.request.CAN_ID = req_.CAN_ID;
     motor_config_srv.request.configration_mode = EXIT_CONTROL_MODE;
+
+    // 指定したvector要素のみを削除したい
+    // motor.erase(motor.begin() + (unsigned int)find_index[req_.CAN_ID]);    // vectorを削除
     
     if(motor_config_client.call(motor_config_srv)){
         if(motor_config_srv.response.success)
@@ -157,8 +280,9 @@ bool AKROS_bridge_converter::exit_CM_Cb(AKROS_bridge_msgs::exit_control_mode::Re
 
 // モータの原点と関節の原点との誤差値を設定
 bool AKROS_bridge_converter::set_PZ_Cb(AKROS_bridge_msgs::set_position_zero::Request& req_, AKROS_bridge_msgs::set_position_zero::Response& res_){
-    motor_config_srv.request.CAN_ID = req_.CAN_ID;
-    motor_config_srv.request.configration_mode = SET_POSITION_TO_ZERO;
+    
+    //motor_config_srv.request.CAN_ID = req_.CAN_ID;
+    //motor_config_srv.request.configration_mode = SET_POSITION_TO_ZERO;
     
     /* deprecated!
     if(motor_config_client.call(motor_config_srv)){
@@ -219,7 +343,8 @@ bool AKROS_bridge_converter::servo_setting_Cb(AKROS_bridge_msgs::servo_setting::
 
 // モータの個数確定
 // これ以上のモータ追加は不可能
-// 「ERROR: service [/motor_lock] responded with an error: 」が出力される
+// To deprecate
+/*
 bool AKROS_bridge_converter::motor_lock_Cb(std_srvs::Empty::Request& res_, std_srvs::Empty::Response& req_){
     if(!initializeFlag){
         motor_config_srv.request.CAN_ID = 0;
@@ -244,7 +369,7 @@ bool AKROS_bridge_converter::motor_lock_Cb(std_srvs::Empty::Request& res_, std_s
         return false;
     }
 }
-
+*/
 
 // 微調節
 bool AKROS_bridge_converter::tweak_control_Cb(AKROS_bridge_msgs::tweak::Request& req_, AKROS_bridge_msgs::tweak::Response& res_){
@@ -293,14 +418,15 @@ default:
 
 
 // motor_statusの値を返す
+/* deprecated!
 bool AKROS_bridge_converter::current_state_Cb(AKROS_bridge_msgs::currentState::Request& req_, AKROS_bridge_msgs::currentState::Response& res_){
     pack_reply(res_.reply, find_index(req_.CAN_ID));
     res_.success = true;
     return true;
 }
+*/
 
-
-// CAN指令値をmotor_statusから引っ張り出して変換し，publish
+// CAN指令値をmotor_statusから引っ張り出して変換し，publish 
 void AKROS_bridge_converter::publish_cmd(void){
     if(initializeFlag){
         for(uint8_t i=0; i<motor.size(); i++){
@@ -323,9 +449,9 @@ void AKROS_bridge_converter::publish_reply(void){
 
 
 // モータのCAN_IDからvector<motor_status>のindexを探し出す
-uint8_t AKROS_bridge_converter::find_index(uint8_t CAN_ID_){
+uint8_t AKROS_bridge_converter::find_index(uint8_t id_){
     for(uint8_t i=0; i<motor.size(); i++){
-        if(motor[i].CAN_ID == CAN_ID_){
+        if(motor[i].CAN_ID == id_){
             return i;
         }
     }

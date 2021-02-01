@@ -1,0 +1,10 @@
+motor_list:
+  - name: Hip
+    can_id: 1
+    model: AK10-9
+  - name: Knee
+    can_id: 2
+    model: AK10-9
+  - name: Wheel
+    can_id: 3
+    model: AK80-6
