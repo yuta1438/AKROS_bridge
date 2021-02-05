@@ -9,14 +9,14 @@
 #define AK10_9_OLD      2
 #define AK80_6_OLD      3
 */
-
+/*
 enum models{
     AK10_9,
     AK80_6,
     AK10_9_OLD,
     AK80_6_OLD,
     num
-};
+};*/
 
 // AK10-9(new)
 #define AK10_9_P_MIN   -12.5f
@@ -66,10 +66,10 @@ enum models{
 typedef struct motor_status_{
     std::string name;   // モータ名前
     std::string model;  // モータ型番
-    uint8_t CAN_ID = 0; 
+    uint8_t CAN_ID = 0; // モータのCAN_ID．初期値は0．
 
     bool servo_mode = false;    // サーボ状態
-    int error = 0;              // モータの原点と関節の原点の誤差値
+    int error = 0;              // モータの原点と関節の原点の誤差値（デジタル値）．初期値は0．
     
     float P_MAX;
     float P_MIN;
