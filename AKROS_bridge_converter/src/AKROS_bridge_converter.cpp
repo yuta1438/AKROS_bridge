@@ -126,6 +126,16 @@ AKROS_bridge_converter::AKROS_bridge_converter(ros::NodeHandle* nh_) : pnh("~"),
     }
     usleep(100*1000);
 
+
+    // servo_on
+    for(uint8_t i=0; i<motor_num; i++){
+        motor[i].servo_mode = true;
+        
+    }
+    ROS_INFO("All servo ON !");
+    usleep(100*1000);
+
+
     // メモリの動的確保
     can_cmd.motor.resize(motor_num);
     reply.motor.resize(motor_num);
