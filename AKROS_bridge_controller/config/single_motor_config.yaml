@@ -1,4 +1,4 @@
 motor_list:
   - name: Motor
-    can_id: 1
+    can_id: 2
     model: AK10-9
