@@ -50,12 +50,11 @@ static const uint8_t big_delta = 100;
 #define CAN_TX_DATA_LENGTH  8   // モータ指令値のDLC
 #define CAN_RX_DATA_LENGTH  6   // モータ応答値のDLC
 
-#define PUBLISH_PERIOD  0.005
+
 
 class AKROS_bridge_converter{
 private:
     ros::NodeHandle *nh;
-    ros::NodeHandle pnh;
     bool initializeFlag;
 
     uint8_t motor_num;

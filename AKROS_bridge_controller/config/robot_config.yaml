@@ -1,10 +1,18 @@
 motor_list:
-  - name: Hip
+  Hip:
     can_id: 1
     model: AK10-9
-  - name: Knee
+    Kp: 20.0  # default value
+    Kd: 1.0
+
+  Knee:
     can_id: 2
     model: AK10-9
-  - name: Wheel
+    Kp: 20.0
+    Kd: 1.0
+    
+  Wheel:
     can_id: 3
     model: AK80-6
+    Kp: 20.0
+    Kd: 1.0

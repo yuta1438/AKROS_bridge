@@ -4,7 +4,7 @@
 #include <AKROS_bridge_converter/AKROS_bridge_converter.h>
 
 // ここで初期化を全て行うべき！
-AKROS_bridge_converter::AKROS_bridge_converter(ros::NodeHandle* nh_) : pnh("~"), spinner(0){
+AKROS_bridge_converter::AKROS_bridge_converter(ros::NodeHandle* nh_) : spinner(0){
     // Topics
     nh = nh_;
     can_pub   = nh->advertise<AKROS_bridge_msgs::motor_can_cmd>("can_cmd", 1);
@@ -21,7 +21,7 @@ AKROS_bridge_converter::AKROS_bridge_converter(ros::NodeHandle* nh_) : pnh("~"),
     // Clients
     motor_config_client = nh->serviceClient<AKROS_bridge_msgs::motor_config>("motor_config");
     
-    // These are valid motor----
+    // These are valid motor ----
     valid_motor_models.insert("AK10-9");
     valid_motor_models.insert("AK80-6");
     valid_motor_models.insert("AK10-9_OLD");
@@ -29,33 +29,19 @@ AKROS_bridge_converter::AKROS_bridge_converter(ros::NodeHandle* nh_) : pnh("~"),
     // -------------------------
 
     // load motor configuration file (.yaml)
-    XmlRpc::XmlRpcValue motor_list;
-    pnh.getParam("motor_list", motor_list);
-    ROS_ASSERT(motor_list.getType() == XmlRpc::XmlRpcValue::TypeArray);
+    XmlRpc::XmlRpcValue params;
+    nh->getParam("/motor_list", params);
 
     // add motor written in yaml file
-    for(int i=0; i<motor_list.size(); i++){
+    for(auto params_iterator = params.begin(); params_iterator!= params.end(); params_iterator++){
         motor_status m;
 
-        if(!motor_list[i]["name"].valid()){ ROS_WARN("No name has settled !"); }    // check name of the motor 
-        if(!motor_list[i]["can_id"].valid()){ ROS_WARN("No CAN_ID has settled !");} // check CAN_ID 
-        if(!motor_list[i]["model"].valid()){ ROS_WARN("No model has settled !");}   // check model
-
-        // get name
-        if(motor_list[i]["name"].getType() == XmlRpc::XmlRpcValue::TypeString){
-            m.name = static_cast<std::string>(motor_list[i]["name"]);
-        }
-        // get CAN_ID
-        if(motor_list[i]["can_id"].getType() == XmlRpc::XmlRpcValue::TypeInt){
-            m.CAN_ID = static_cast<int>(motor_list[i]["can_id"]);
-        }
-        // get model of the motor
-        if(motor_list[i]["model"].getType() == XmlRpc::XmlRpcValue::TypeString){
-            m.model = static_cast<std::string>(motor_list[i]["model"]);
-        }
+        // get name, CAN-ID, model of the motor from rosparam
+        m.name = static_cast<std::string>(params_iterator->first);
+        m.CAN_ID = static_cast<int>(params_iterator->second["can_id"]);
+        m.model = static_cast<std::string>(params_iterator->second["model"]);
 
         // check whether if the model written in .yaml file is valid or not.
-        // If error has been detected, this node will be killed.
         if(valid_motor_models.find(m.model) == valid_motor_models.end()){
             ROS_ERROR("Invalid motor has been detected at %s", m.name.c_str());
         }else{
@@ -130,11 +116,9 @@ AKROS_bridge_converter::AKROS_bridge_converter(ros::NodeHandle* nh_) : pnh("~"),
     // servo_on
     for(uint8_t i=0; i<motor_num; i++){
         motor[i].servo_mode = true;
-        
     }
     ROS_INFO("All servo ON !");
     usleep(100*1000);
-
 
     // メモリの動的確保
     can_cmd.motor.resize(motor_num);
@@ -178,15 +162,12 @@ void AKROS_bridge_converter::pack_reply(AKROS_bridge_msgs::motor_reply_single &r
     reply_.position = uint_to_float(motor[index_].position + motor[index_].error, motor[index_].P_MIN, motor[index_].P_MAX, POSITION_BIT_NUM);
     reply_.velocity = uint_to_float(motor[index_].velocity, motor[index_].V_MIN, motor[index_].V_MAX, VELOCITY_BIT_NUM);
     reply_.effort   = uint_to_float(motor[index_].effort,   T_MIN, T_MAX, EFFORT_BIT_NUM);
-
-    //ROS_INFO("pack_reply");
 }
 
 
 // motor_cmdをint値に変換してmotor_statusに格納
 void AKROS_bridge_converter::unpack_cmd(const AKROS_bridge_msgs::motor_cmd_single& cmd_){
     std::lock_guard<std::mutex> lock(motor_mutex);
-
     uint8_t index_ = find_index(cmd_.CAN_ID);
     motor[index_].position_ref = float_to_uint(fminf(fmaxf(motor[index_].P_MIN, cmd_.position), motor[index_].P_MAX), motor[index_].P_MIN, motor[index_].P_MAX, POSITION_BIT_NUM);
     motor[index_].velocity_ref = float_to_uint(fminf(fmaxf(motor[index_].V_MIN, cmd_.velocity), motor[index_].V_MAX), motor[index_].V_MIN, motor[index_].V_MAX, VELOCITY_BIT_NUM);
@@ -204,8 +185,6 @@ void AKROS_bridge_converter::unpack_can_reply(const AKROS_bridge_msgs::motor_can
     motor[index_].position = can_reply_.position;
     motor[index_].velocity = can_reply_.velocity;
     motor[index_].effort   = can_reply_.effort;
-
-    //ROS_INFO("unpack_can_reply");
 }
 
 
@@ -298,46 +277,46 @@ bool AKROS_bridge_converter::servo_setting_Cb(AKROS_bridge_msgs::servo_setting::
 // 微調節
 bool AKROS_bridge_converter::tweak_control_Cb(AKROS_bridge_msgs::tweak::Request& req_, AKROS_bridge_msgs::tweak::Response& res_){
 switch (req_.control){
-case TWEAK_UP:  // +1
-    motor[find_index(req_.CAN_ID)].position_ref += tweak_delta;
-    res_.success = true;
-    return true;
-    break;
+    case TWEAK_UP:  // +1
+        motor[find_index(req_.CAN_ID)].position_ref += tweak_delta;
+        res_.success = true;
+        return true;
+        break;
 
-case TWEAK_DOWN:    // -1
-    motor[find_index(req_.CAN_ID)].position_ref -= tweak_delta;
-    res_.success = true;
-    return true;
-    break;
+    case TWEAK_DOWN:    // -1
+        motor[find_index(req_.CAN_ID)].position_ref -= tweak_delta;
+        res_.success = true;
+        return true;
+        break;
 
-case UP:    // +10
-    motor[find_index(req_.CAN_ID)].position_ref += delta;
-    res_.success = true;
-    return true;
-    break;
+    case UP:    // +10
+        motor[find_index(req_.CAN_ID)].position_ref += delta;
+        res_.success = true;
+        return true;
+        break;
 
-case DOWN:  // -10
-    motor[find_index(req_.CAN_ID)].position_ref -= delta;
-    res_.success = true;
-    return true;
-    break;
+    case DOWN:  // -10
+        motor[find_index(req_.CAN_ID)].position_ref -= delta;
+        res_.success = true;
+        return true;
+        break;
 
-case BIG_UP:    // +100
-    motor[find_index(req_.CAN_ID)].position_ref += big_delta;
-    res_.success = true;
-    return true;
-    break;
+    case BIG_UP:    // +100
+        motor[find_index(req_.CAN_ID)].position_ref += big_delta;
+        res_.success = true;
+        return true;
+        break;
 
-case BIG_DOWN:  // -100
-    motor[find_index(req_.CAN_ID)].position_ref -= big_delta;
-    res_.success = true;
-    return true;
-    break;
+    case BIG_DOWN:  // -100
+        motor[find_index(req_.CAN_ID)].position_ref -= big_delta;
+        res_.success = true;
+        return true;
+        break;
 
-default:
-    return false;
-    break;
-}
+    default:
+        return false;
+        break;
+    }
 }
 
 

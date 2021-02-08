@@ -1,4 +1,6 @@
 motor_list:
-  - name: Motor
+  Motor:
     can_id: 2
     model: AK10-9
+    Kp: 20.0  # default value
+    Kd: 1.0

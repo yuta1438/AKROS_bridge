@@ -48,7 +48,6 @@ void AKROS_bridge::can_cmd_Cb(const AKROS_bridge_msgs::motor_can_cmd& cmd_){
 // 2 -> exit_control_mode
 // 3 -> set_position_to_zero
 // 4 -> initialize_lock
-// 5 -> 
 void AKROS_bridge::motor_config_Cb(const AKROS_bridge_msgs::motor_config::Request& req_, AKROS_bridge_msgs::motor_config::Response& res_){
     __disable_irq();
     switch(req_.configration_mode){
@@ -88,7 +87,7 @@ void AKROS_bridge::motor_config_Cb(const AKROS_bridge_msgs::motor_config::Reques
             red_led = 0;
             yellow_led = 0;
             green_led = 1;
-            ticker.attach(this, &AKROS_bridge::can_send, 0.001);
+            ticker.attach(callback(this, &AKROS_bridge::can_send), 0.005);
             res_.success = true;
             break;
 
@@ -98,22 +97,6 @@ void AKROS_bridge::motor_config_Cb(const AKROS_bridge_msgs::motor_config::Reques
     }
     __enable_irq();
 }
-
-// 現在のモータ情報を返す
-// Clientのcallでは必ずif(service.call())とすること！
-/*
-void AKROS_bridge::currentState_Cb(const AKROS_bridge_msgs::currentState::Request& req_, AKROS_bridge_msgs::currentState::Response& res_){
-   if(can_controller.find_index(req_.CAN_ID) != ERROR_VALUE){
-       can_controller.unpack_reply(res_.reply, req_.CAN_ID);
-       res_.success = true;
-   }else{
-       res_.reply.id = ERROR_VALUE;
-       res_.reply.position = -1.0;
-       res_.reply.velocity = -1.0;
-       res_.reply.effort   = -1.0;
-       res_.success = false;
-   }
-}*/
 
 
 void AKROS_bridge::can_send(void){
@@ -130,7 +113,7 @@ void AKROS_bridge::publish(void){
    if(can_controller.getInitializeFlag()){
         for(uint8_t i=0; i<MotorNum; i++){
             // can_reply_pub
-            can_reply_msg.motor[i].CAN_ID = can_controller.motor[i].CAN_ID;
+            can_reply_msg.motor[i].CAN_ID   = can_controller.motor[i].CAN_ID;
             can_reply_msg.motor[i].position = can_controller.motor[i].position;
             can_reply_msg.motor[i].velocity = can_controller.motor[i].velocity;
             can_reply_msg.motor[i].effort   = can_controller.motor[i].effort;
