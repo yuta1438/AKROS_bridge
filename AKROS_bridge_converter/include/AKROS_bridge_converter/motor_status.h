@@ -27,8 +27,8 @@ enum models{
 // AK80-6(new)
 #define AK80_6_P_MIN   -12.5f
 #define AK80_6_P_MAX   12.5f
-#define AK80_6_V_MIN   -22.5f
-#define AK80_6_V_MAX   22.5f
+#define AK80_6_V_MIN   -45.0f
+#define AK80_6_V_MAX   45.0f
 
 // AK10-9(old)
 #define AK10_9_OLD_P_MIN   -95.5f

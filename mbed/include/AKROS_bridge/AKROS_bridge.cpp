@@ -87,7 +87,7 @@ void AKROS_bridge::motor_config_Cb(const AKROS_bridge_msgs::motor_config::Reques
             red_led = 0;
             yellow_led = 0;
             green_led = 1;
-            ticker.attach(callback(this, &AKROS_bridge::can_send), 0.005);
+            ticker.attach(callback(this, &AKROS_bridge::can_send), 0.001);
             res_.success = true;
             break;
 
