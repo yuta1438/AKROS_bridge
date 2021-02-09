@@ -6,6 +6,7 @@
 // ここで初期化を全て行うべき！
 AKROS_bridge_converter::AKROS_bridge_converter(ros::NodeHandle* nh_) : spinner(0){
     // Topics
+    usleep(1000*1000);  // wait for rosserial connection established
     nh = nh_;
     can_pub   = nh->advertise<AKROS_bridge_msgs::motor_can_cmd>("can_cmd", 1);
     reply_pub = nh->advertise<AKROS_bridge_msgs::motor_reply>("motor_reply", 1);
