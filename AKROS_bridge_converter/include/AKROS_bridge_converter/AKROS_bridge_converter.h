@@ -2,6 +2,10 @@
 #ifndef AKROS_BRIDGE_CONVERTER_H_
 #define AKROS_BRIDGE_CONVERTER_H_
 
+// 原点だしの位置と実際の零位置との差
+#define HIP_OFFSET  3233    // = 70.7[deg]
+#define KNEE_OFFSET 1372    // = 30.0[deg]
+
 #include <ros/ros.h>
 #include <vector>
 #include <mutex>

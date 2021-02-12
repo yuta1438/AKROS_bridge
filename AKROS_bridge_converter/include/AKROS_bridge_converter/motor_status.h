@@ -69,6 +69,7 @@ typedef struct motor_status_{
     uint8_t CAN_ID = 0; // モータのCAN_ID．初期値は0．
 
     bool servo_mode = false;    // サーボ状態
+    bool isExceedLimit = false; // 可動角を
     int error = 0;              // モータの原点と関節の原点の誤差値（デジタル値）．初期値は0．
     
     float P_MAX;

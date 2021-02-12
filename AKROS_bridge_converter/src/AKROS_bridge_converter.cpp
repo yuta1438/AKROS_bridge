@@ -47,7 +47,6 @@ AKROS_bridge_converter::AKROS_bridge_converter(ros::NodeHandle* nh_) : spinner(0
             ROS_ERROR("Invalid motor has been detected at %s", m.name.c_str());
         }else{
             ROS_INFO("Add motor name: %s, CAN_ID: %i, model: %s", m.name.c_str(), m.CAN_ID, m.model.c_str());
-            
             motor.push_back(m); // create new vector element
         }
     }
@@ -79,6 +78,9 @@ AKROS_bridge_converter::AKROS_bridge_converter(ros::NodeHandle* nh_) : spinner(0
             motor[i].V_MAX = AK80_6_OLD_V_MAX;
             motor[i].V_MIN = AK80_6_OLD_V_MIN;
         }
+
+        // オフセット値や原点の計算
+        // motor[i].error = ~
 
         // Enter control mode for each motor
         AKROS_bridge_msgs::motor_config enter_control_srv;
@@ -227,6 +229,7 @@ bool AKROS_bridge_converter::exit_CM_Cb(AKROS_bridge_msgs::exit_control_mode::Re
 
 
 // モータの原点と関節の原点との誤差値を設定
+// initialize部でしか使用できないようにする！ To deprecate!
 bool AKROS_bridge_converter::set_PZ_Cb(AKROS_bridge_msgs::set_position_zero::Request& req_, AKROS_bridge_msgs::set_position_zero::Response& res_){
     // error = joint - motor
     motor[find_index(req_.CAN_ID)].error = CENTER_POSITION - motor[find_index(req_.CAN_ID)].position;
