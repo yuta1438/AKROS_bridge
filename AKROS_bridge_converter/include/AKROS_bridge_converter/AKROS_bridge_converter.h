@@ -29,7 +29,7 @@
 #include <AKROS_bridge_msgs/servo_setting.h>
 #include <AKROS_bridge_msgs/motor_config.h>
 #include <AKROS_bridge_msgs/tweak.h>
-#include <std_srvs/Empty.h>
+#include <AKROS_bridge_msgs/currentState.h>
 
 // Settings
 #define ENTER_CONTROL_MODE      1
@@ -89,18 +89,19 @@ private:
 
     /** サービス通信 **/
     ros::ServiceServer exit_CM_server;          // exit_control_mode_server
-    ros::ServiceServer set_PZ_server;           // set_zero_position_server
+    ros::ServiceServer set_ZP_server;           // set_zero_position_server
     ros::ServiceServer servo_setting_server;    // set servo of the motor
     ros::ServiceServer motor_lock_server;
     ros::ServiceServer tweak_control_server;
     ros::ServiceClient motor_config_client; // モータに関する各種設定
-    
+    ros::ServiceClient currentState;
 
     // Callback Functions
     bool exit_CM_Cb(AKROS_bridge_msgs::exit_control_mode::Request&, AKROS_bridge_msgs::exit_control_mode::Response&);
-    bool set_PZ_Cb(AKROS_bridge_msgs::set_position_zero::Request&, AKROS_bridge_msgs::set_position_zero::Response&);
+    bool set_ZP_Cb(AKROS_bridge_msgs::set_position_zero::Request&, AKROS_bridge_msgs::set_position_zero::Response&);
     bool servo_setting_Cb(AKROS_bridge_msgs::servo_setting::Request&, AKROS_bridge_msgs::servo_setting::Response&);
     bool tweak_control_Cb(AKROS_bridge_msgs::tweak::Request&, AKROS_bridge_msgs::tweak::Response&);
+    bool currentState_Cb(AKROS_bridge_msgs::currentState::Request&, AKROS_bridge_msgs::currentState::Response&);
 
     uint8_t find_index(uint8_t);
 

@@ -15,7 +15,7 @@ AKROS_bridge_converter::AKROS_bridge_converter(ros::NodeHandle* nh_) : spinner(0
 
     // Server初期設定
     exit_CM_server       = nh->advertiseService("exit_control_mode", &AKROS_bridge_converter::exit_CM_Cb, this);
-    set_PZ_server        = nh->advertiseService("set_position_to_zero", &AKROS_bridge_converter::set_PZ_Cb, this);
+    set_ZP_server        = nh->advertiseService("set_position_to_zero", &AKROS_bridge_converter::set_ZP_Cb, this);
     servo_setting_server = nh->advertiseService("servo_setting", &AKROS_bridge_converter::servo_setting_Cb, this);
     tweak_control_server = nh->advertiseService("tweak_control", &AKROS_bridge_converter::tweak_control_Cb, this);
 
@@ -274,7 +274,7 @@ bool AKROS_bridge_converter::exit_CM_Cb(AKROS_bridge_msgs::exit_control_mode::Re
 
 // モータの原点と関節の原点との誤差値を設定
 // initialize部でしか使用できないようにする！ To deprecate!
-bool AKROS_bridge_converter::set_PZ_Cb(AKROS_bridge_msgs::set_position_zero::Request& req_, AKROS_bridge_msgs::set_position_zero::Response& res_){
+bool AKROS_bridge_converter::set_ZP_Cb(AKROS_bridge_msgs::set_position_zero::Request& req_, AKROS_bridge_msgs::set_position_zero::Response& res_){
     // error = joint - motor
     if(req_.CAN_ID == 0){   // 0なら全てのモータに対して
         for(auto& e : motor){
@@ -325,6 +325,22 @@ bool AKROS_bridge_converter::servo_setting_Cb(AKROS_bridge_msgs::servo_setting::
         }
     }
     
+    res_.success = true;
+    return true;
+}
+
+
+// 現在のモータ情報を返す
+// controllerのはじめに取得するために使う
+bool AKROS_bridge_converter::currentState_Cb(AKROS_bridge_msgs::currentState::Request& req_, AKROS_bridge_msgs::currentState::Response& res_){
+    res_.reply.motor.resize(motor_num);
+
+    for(int index_=0; index_<motor_num; index_++){
+        res_.reply.motor[index_].CAN_ID   = motor[index_].CAN_ID;
+        res_.reply.motor[index_].position = uint_to_float(motor[index_].position + (motor[index_].offset+motor[index_].error), motor[index_].P_MIN, motor[index_].P_MAX, POSITION_BIT_NUM);
+        res_.reply.motor[index_].velocity = uint_to_float(motor[index_].velocity, motor[index_].V_MIN, motor[index_].V_MAX, VELOCITY_BIT_NUM);
+        res_.reply.motor[index_].effort   = uint_to_float(motor[index_].effort,   T_MIN, T_MAX, EFFORT_BIT_NUM);
+    }
     res_.success = true;
     return true;
 }

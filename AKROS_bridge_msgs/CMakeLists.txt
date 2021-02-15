@@ -68,9 +68,7 @@ add_service_files(
   set_position_zero.srv
   servo_setting.srv
   tweak.srv
-
   currentState.srv
-  currentState_can.srv
 )
 
 ## Generate actions in the 'action' folder

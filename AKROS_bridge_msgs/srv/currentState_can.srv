@@ -1,5 +1,0 @@
-# 現在のモータ情報を渡すservice通信
-uint8 CAN_ID
----
-bool success
-AKROS_bridge_msgs/motor_can_reply_single can_reply
