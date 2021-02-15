@@ -88,7 +88,6 @@ private:
 
 
     /** サービス通信 **/
-    ros::ServiceServer enter_CM_server;         // enter_control_mode_server
     ros::ServiceServer exit_CM_server;          // exit_control_mode_server
     ros::ServiceServer set_PZ_server;           // set_zero_position_server
     ros::ServiceServer servo_setting_server;    // set servo of the motor

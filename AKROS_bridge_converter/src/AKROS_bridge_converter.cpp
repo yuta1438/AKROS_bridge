@@ -5,7 +5,7 @@
 
 // ここで初期化を全て行うべき！
 AKROS_bridge_converter::AKROS_bridge_converter(ros::NodeHandle* nh_) : spinner(0){
-    // Topics
+    // Topic初期設定
     usleep(1000*1000);  // wait for rosserial connection established
     nh = nh_;
     can_pub   = nh->advertise<AKROS_bridge_msgs::motor_can_cmd>("can_cmd", 1);
@@ -13,83 +13,113 @@ AKROS_bridge_converter::AKROS_bridge_converter(ros::NodeHandle* nh_) : spinner(0
     cmd_sub   = nh->subscribe("motor_cmd", 1, &AKROS_bridge_converter::motor_cmd_Cb, this);
     can_sub   = nh->subscribe("can_reply", 1, &AKROS_bridge_converter::can_reply_Cb, this);
 
-    // Servers
+    // Server初期設定
     exit_CM_server       = nh->advertiseService("exit_control_mode", &AKROS_bridge_converter::exit_CM_Cb, this);
     set_PZ_server        = nh->advertiseService("set_position_to_zero", &AKROS_bridge_converter::set_PZ_Cb, this);
     servo_setting_server = nh->advertiseService("servo_setting", &AKROS_bridge_converter::servo_setting_Cb, this);
     tweak_control_server = nh->advertiseService("tweak_control", &AKROS_bridge_converter::tweak_control_Cb, this);
 
-    // Clients
+    // Client初期設定
     motor_config_client = nh->serviceClient<AKROS_bridge_msgs::motor_config>("motor_config");
     
-    // These are valid motor ----
+    // 有効なモータの型番は以下の通り(std::mapを使用して有効かどうか確認する) ----
     valid_motor_models.insert("AK10-9");
     valid_motor_models.insert("AK80-6");
     valid_motor_models.insert("AK10-9_OLD");
     valid_motor_models.insert("AK80-6_OLD");
     // -------------------------
 
-    // load motor configuration file (.yaml)
+    // .yamlファイルからデータを読み込み，rosparamに登録する
     XmlRpc::XmlRpcValue params;
     nh->getParam("/motor_list", params);
 
-    // add motor written in yaml file
+    // .yamlファイルに記載されたモータを登録する
     for(auto params_iterator = params.begin(); params_iterator!= params.end(); params_iterator++){
         motor_status m;
 
-        // get name, CAN-ID, model of the motor from rosparam
+        // get name, CAN-ID, model, offset of the motor from rosparam
         m.name = static_cast<std::string>(params_iterator->first);
         m.CAN_ID = static_cast<int>(params_iterator->second["can_id"]);
         m.model = static_cast<std::string>(params_iterator->second["model"]);
 
-        // check whether if the model written in .yaml file is valid or not.
+        // .yamlファイルに記載されたモータ型番が有効かどうかを確認
+        // もし有効ならそれにあったPDゲインの上下限値を設定．（AD/DA変換時に使用）
         if(valid_motor_models.find(m.model) == valid_motor_models.end()){
             ROS_ERROR("Invalid motor has been detected at %s", m.name.c_str());
         }else{
-            ROS_INFO("Add motor name: %s, CAN_ID: %i, model: %s", m.name.c_str(), m.CAN_ID, m.model.c_str());
-            motor.push_back(m); // create new vector element
+            if(m.model == "AK10-9"){
+                m.P_MAX = AK10_9_P_MAX;
+                m.P_MIN = AK10_9_P_MIN;
+                m.V_MAX = AK10_9_V_MAX;
+                m.V_MIN = AK10_9_V_MIN;
+            }
+            else if(m.model == "AK80-6"){
+                m.P_MAX = AK80_6_P_MAX;
+                m.P_MIN = AK80_6_P_MIN;
+                m.V_MAX = AK80_6_V_MAX;
+                m.V_MIN = AK80_6_V_MIN;
+            }
+            else if(m.model == "AK10-9_OLD"){
+                m.P_MAX = AK10_9_OLD_P_MAX;
+                m.P_MIN = AK10_9_OLD_P_MIN;
+                m.V_MAX = AK10_9_OLD_V_MAX;
+                m.V_MIN = AK10_9_OLD_V_MIN;
+            }
+            else if(m.model == "AK80-6_OLD"){
+                m.P_MAX = AK80_6_OLD_P_MAX;
+                m.P_MIN = AK80_6_OLD_P_MIN;
+                m.V_MAX = AK80_6_OLD_V_MAX;
+                m.V_MIN = AK80_6_OLD_V_MIN;
+            }
         }
+
+        // 関節可動角を設定
+        // どうやったらjointLimit: []の中身を取り出せるか？
+        if(params_iterator->second["joint_limit"].valid()){
+            // これで取れるっちゃ取れる...
+            /*
+            std::vector<double> limit;
+            nh.getParam("/motor_list/Hip/joint_limit", limit);
+            for(auto& e : limit){
+                std::cout << e << std::endl;
+            }*/
+
+            // iterator経由で取得する方法が分からなかったのでNodeHandle経由で取得するようにする．
+            std::vector<double> limit;
+            std::string string1 = "/motor_list/";
+            std::string string2 = "/joint_limit";
+            std::string full_path = string1 + static_cast<std::string>(params_iterator->first) + string2;
+            nh->getParam(full_path, limit);
+            m.lower_limit = deg2rad(limit[0]);
+            m.upper_limit = deg2rad(limit[1]);
+            m.isLimitExist = true;
+            
+            // debug
+            // std::cout << rad2deg(m.lower_limit) << std::endl;
+            // std::cout << rad2deg(m.upper_limit) << std::endl;
+        }
+
+        // オフセット値の計算
+        if(params_iterator->second["offset"].valid()){
+            // offsetをアナログ値[deg]からデジタル値に変換する
+            m.offset = convertOffset(deg2rad(static_cast<double>(params_iterator->second["offset"])), m.P_MIN, m.P_MAX, POSITION_BIT_NUM);
+        }
+
+        ROS_INFO("Add motor name: %s, CAN_ID: %i, model: %s", m.name.c_str(), m.CAN_ID, m.model.c_str());
+        motor.push_back(m); // 新しいベクトル要素を作成
     }
 
-    motor_num = (uint8_t)motor.size();  // determine the number of motor
+    motor_num = (uint8_t)motor.size();  // モータ個数を固定
 
-    for(int i=0; i<motor_num; i++){
-        if(motor[i].model == "AK10-9"){
-            motor[i].P_MAX = AK10_9_P_MAX;
-            motor[i].P_MIN = AK10_9_P_MIN;
-            motor[i].V_MAX = AK10_9_V_MAX;
-            motor[i].V_MIN = AK10_9_V_MIN;
-            }
-        else if(motor[i].model == "AK80-6"){
-            motor[i].P_MAX = AK80_6_P_MAX;
-            motor[i].P_MIN = AK80_6_P_MIN;
-            motor[i].V_MAX = AK80_6_V_MAX;
-            motor[i].V_MIN = AK80_6_V_MIN;
-        }
-        else if(motor[i].model == "AK10-9_OLD"){
-            motor[i].P_MAX = AK10_9_OLD_P_MAX;
-            motor[i].P_MIN = AK10_9_OLD_P_MIN;
-            motor[i].V_MAX = AK10_9_OLD_V_MAX;
-            motor[i].V_MIN = AK10_9_OLD_V_MIN;
-        }
-        else if(motor[i].model == "AK80-6_OLD"){
-            motor[i].P_MAX = AK80_6_OLD_P_MAX;
-            motor[i].P_MIN = AK80_6_OLD_P_MIN;
-            motor[i].V_MAX = AK80_6_OLD_V_MAX;
-            motor[i].V_MIN = AK80_6_OLD_V_MIN;
-        }
-
-        // オフセット値や原点の計算
-        // motor[i].error = ~
-
+    for(auto& e : motor){
         // Enter control mode for each motor
         AKROS_bridge_msgs::motor_config enter_control_srv;
-        enter_control_srv.request.CAN_ID = motor[i].CAN_ID;
+        enter_control_srv.request.CAN_ID = e.CAN_ID;
         enter_control_srv.request.configration_mode = ENTER_CONTROL_MODE;
 
         if(motor_config_client.call(enter_control_srv)){
             if(enter_control_srv.response.success){
-                ROS_INFO("Motor %d initialized !", motor[i].CAN_ID);
+                ROS_INFO("Motor %d initialized !", e.CAN_ID);
             }else{
                 ROS_WARN("enter_control service failed !");
             }
@@ -97,6 +127,11 @@ AKROS_bridge_converter::AKROS_bridge_converter(ros::NodeHandle* nh_) : spinner(0
             ROS_WARN("There is no server for enter_control_mode !");
         }
         usleep(100*1000);
+
+        // motor[i].errorの計算
+        // error = (理想位置) - (初期位置)
+        // e.error = CENTER_POSITION - e.position;
+        // e.position_ref = CENTER_POSITION;
     }
 
 
@@ -143,7 +178,7 @@ void AKROS_bridge_converter::pack_cmd(AKROS_bridge_msgs::motor_can_cmd_single &c
     std::lock_guard<std::mutex> lock(motor_mutex);
     
     can_cmd_.CAN_ID   = motor[index_].CAN_ID;
-    can_cmd_.position = motor[index_].position_ref - motor[index_].error;
+    can_cmd_.position = motor[index_].position_ref - (motor[index_].offset+motor[index_].error);
     can_cmd_.velocity = motor[index_].velocity_ref;
     can_cmd_.effort   = motor[index_].effort_ref;
 
@@ -162,17 +197,26 @@ void AKROS_bridge_converter::pack_cmd(AKROS_bridge_msgs::motor_can_cmd_single &c
 void AKROS_bridge_converter::pack_reply(AKROS_bridge_msgs::motor_reply_single &reply_, uint8_t index_){
     std::lock_guard<std::mutex> lock(motor_mutex);
     reply_.CAN_ID   = motor[index_].CAN_ID;
-    reply_.position = uint_to_float(motor[index_].position + motor[index_].error, motor[index_].P_MIN, motor[index_].P_MAX, POSITION_BIT_NUM);
+    reply_.position = uint_to_float(motor[index_].position + (motor[index_].offset+motor[index_].error), motor[index_].P_MIN, motor[index_].P_MAX, POSITION_BIT_NUM);
     reply_.velocity = uint_to_float(motor[index_].velocity, motor[index_].V_MIN, motor[index_].V_MAX, VELOCITY_BIT_NUM);
     reply_.effort   = uint_to_float(motor[index_].effort,   T_MIN, T_MAX, EFFORT_BIT_NUM);
 }
 
 
 // motor_cmdをint値に変換してmotor_statusに格納
+// ソフト上で可動角内で動くように制限を掛ける
 void AKROS_bridge_converter::unpack_cmd(const AKROS_bridge_msgs::motor_cmd_single& cmd_){
     std::lock_guard<std::mutex> lock(motor_mutex);
     uint8_t index_ = find_index(cmd_.CAN_ID);
-    motor[index_].position_ref = float_to_uint(fminf(fmaxf(motor[index_].P_MIN, cmd_.position), motor[index_].P_MAX), motor[index_].P_MIN, motor[index_].P_MAX, POSITION_BIT_NUM);
+
+    // ソフト上で回転角を制限
+    // 制限角がある場合は制限角を超えないようにフィルタ．
+    if(motor[index_].isLimitExist){
+        motor[index_].position_ref = float_to_uint(fminf(fmaxf(motor[index_].upper_limit, cmd_.position), motor[index_].upper_limit), motor[index_].P_MIN, motor[index_].P_MAX, POSITION_BIT_NUM);
+    }else{  // 制限がない場合は特にフィルタしない
+        motor[index_].position_ref = float_to_uint(fminf(fmaxf(motor[index_].P_MIN, cmd_.position), motor[index_].P_MAX), motor[index_].P_MIN, motor[index_].P_MAX, POSITION_BIT_NUM);
+    }
+    
     motor[index_].velocity_ref = float_to_uint(fminf(fmaxf(motor[index_].V_MIN, cmd_.velocity), motor[index_].V_MAX), motor[index_].V_MIN, motor[index_].V_MAX, VELOCITY_BIT_NUM);
     motor[index_].effort_ref   = float_to_uint(fminf(fmaxf(T_MIN, cmd_.effort), T_MAX), T_MIN, T_MAX, EFFORT_BIT_NUM);
     motor[index_].Kp           = float_to_uint(fminf(fmaxf(KP_MIN, cmd_.Kp), KP_MAX), KP_MIN, KP_MAX, KP_BIT_NUM);
@@ -232,11 +276,19 @@ bool AKROS_bridge_converter::exit_CM_Cb(AKROS_bridge_msgs::exit_control_mode::Re
 // initialize部でしか使用できないようにする！ To deprecate!
 bool AKROS_bridge_converter::set_PZ_Cb(AKROS_bridge_msgs::set_position_zero::Request& req_, AKROS_bridge_msgs::set_position_zero::Response& res_){
     // error = joint - motor
-    motor[find_index(req_.CAN_ID)].error = CENTER_POSITION - motor[find_index(req_.CAN_ID)].position;
-    motor[find_index(req_.CAN_ID)].position_ref = CENTER_POSITION;
-
+    if(req_.CAN_ID == 0){   // 0なら全てのモータに対して
+        for(auto& e : motor){
+            e.error = CENTER_POSITION - e.position;
+            e.position_ref = CENTER_POSITION;
+        }
+        ROS_INFO("Set zero position of all motors !");
+    }else{
+        motor[find_index(req_.CAN_ID)].error = CENTER_POSITION - motor[find_index(req_.CAN_ID)].position;
+        motor[find_index(req_.CAN_ID)].position_ref = CENTER_POSITION;
+        ROS_INFO("Set zero position of motor %d !", req_.CAN_ID);
+    }
+    
     res_.success = true;
-
     return true;
 }
 
@@ -246,8 +298,8 @@ bool AKROS_bridge_converter::set_PZ_Cb(AKROS_bridge_msgs::set_position_zero::Req
 bool AKROS_bridge_converter::servo_setting_Cb(AKROS_bridge_msgs::servo_setting::Request& req_, AKROS_bridge_msgs::servo_setting::Response& res_){
     // CAN_ID = 0ならすべてのモータに対して一括設定
     if(req_.CAN_ID == 0){
-        for(uint8_t i=0; i<motor.size(); i++){
-            motor[i].servo_mode = req_.servo;
+        for(auto& e : motor){
+            e.servo_mode = req_.servo;
         }
 
         if(req_.servo){
@@ -255,10 +307,10 @@ bool AKROS_bridge_converter::servo_setting_Cb(AKROS_bridge_msgs::servo_setting::
         }else{
             ROS_INFO("All servo OFF");
             // 指令値をすべて0に！
-            for(size_t i=0; i<motor.size(); i++){
-                motor[i].position_ref = CENTER_POSITION;
-                motor[i].velocity_ref = CENTER_VELOCITY;
-                motor[i].effort_ref = CENTER_EFFORT;
+            for(auto& e : motor){
+                e.position_ref = CENTER_POSITION;
+                e.velocity_ref = CENTER_VELOCITY;
+                e.effort_ref = CENTER_EFFORT;
             }
         }
     }else{  // そうでなければ個別に設定
