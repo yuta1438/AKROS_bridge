@@ -5,17 +5,19 @@ motor_list:
   Hip:
     can_id: 1
     model: AK10-9
-    Kp: 20.0
+    Kp: 150.0
     Kd: 1.0
     offset: -70.7  # [deg]
+    # inverseDirection: true
     joint_limit: [-90.0, 90.0] #[deg]
 
   Knee:
     can_id: 2
     model: AK10-9
-    Kp: 20.0
+    Kp: 75.0
     Kd: 1.0
     offset: 30.0  # [deg]
+    # inverseDirection: true
     joint_limit: [15.0, 135.0] #deg
     
   Wheel:
