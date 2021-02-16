@@ -93,8 +93,9 @@ private:
     ros::ServiceServer servo_setting_server;    // set servo of the motor
     ros::ServiceServer motor_lock_server;
     ros::ServiceServer tweak_control_server;
+    ros::ServiceServer currentState;
     ros::ServiceClient motor_config_client; // モータに関する各種設定
-    ros::ServiceClient currentState;
+    
 
     // Callback Functions
     bool exit_CM_Cb(AKROS_bridge_msgs::exit_control_mode::Request&, AKROS_bridge_msgs::exit_control_mode::Response&);

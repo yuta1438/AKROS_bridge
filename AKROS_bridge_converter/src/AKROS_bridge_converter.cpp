@@ -18,6 +18,7 @@ AKROS_bridge_converter::AKROS_bridge_converter(ros::NodeHandle* nh_) : spinner(0
     set_ZP_server        = nh->advertiseService("set_position_to_zero", &AKROS_bridge_converter::set_ZP_Cb, this);
     servo_setting_server = nh->advertiseService("servo_setting", &AKROS_bridge_converter::servo_setting_Cb, this);
     tweak_control_server = nh->advertiseService("tweak_control", &AKROS_bridge_converter::tweak_control_Cb, this);
+    currentState         = nh->advertiseService("current_state", &AKROS_bridge_converter::currentState_Cb, this);
 
     // Client初期設定
     motor_config_client = nh->serviceClient<AKROS_bridge_msgs::motor_config>("motor_config");
@@ -212,7 +213,7 @@ void AKROS_bridge_converter::unpack_cmd(const AKROS_bridge_msgs::motor_cmd_singl
     // ソフト上で回転角を制限
     // 制限角がある場合は制限角を超えないようにフィルタ．
     if(motor[index_].isLimitExist){
-        motor[index_].position_ref = float_to_uint(fminf(fmaxf(motor[index_].upper_limit, cmd_.position), motor[index_].upper_limit), motor[index_].P_MIN, motor[index_].P_MAX, POSITION_BIT_NUM);
+        motor[index_].position_ref = float_to_uint(fminf(fmaxf(motor[index_].lower_limit, cmd_.position), motor[index_].upper_limit), motor[index_].P_MIN, motor[index_].P_MAX, POSITION_BIT_NUM);
     }else{  // 制限がない場合は特にフィルタしない
         motor[index_].position_ref = float_to_uint(fminf(fmaxf(motor[index_].P_MIN, cmd_.position), motor[index_].P_MAX), motor[index_].P_MIN, motor[index_].P_MAX, POSITION_BIT_NUM);
     }

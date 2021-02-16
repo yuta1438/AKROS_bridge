@@ -1,7 +1,13 @@
 motor_list:
-  - name: Motor1
-    can_id: 1
-    model: AK10-9
-  - name: Motor2
+  Motor1:
     can_id: 2
     model: AK10-9
+    Kp: 5.0
+    Kd: 1.0
+    joint_limit: [15.0, 90.0]
+    offset: 30.0
+  Motor2:
+    can_id: 3
+    model: AK80-6
+    Kp: 2.0
+    Kd: 1.0
