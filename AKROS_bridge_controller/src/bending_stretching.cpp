@@ -61,9 +61,10 @@ int main(int argc, char** argv){
     qref_old = Eigen::Vector2d::Zero();
 
     // 初期状態を取得
-    Eigen::Vector2d q_init = Eigen::Vector2d::Zero();
+    Eigen::VectorXd q_init(3);
+    q_init = Eigen::VectorXd::Zero(3);
     if(currentState_client.call(currentState_srv)){
-        for(int i=0; i<2; i++){
+        for(int i=0; i<3; i++){
             q_init[i] = -1 * currentState_srv.response.reply.motor[i].position;
             std::cout << "q_init[" << i << "] : " << q_init[i] << std::endl;
         }
@@ -110,7 +111,7 @@ int main(int argc, char** argv){
         else if(phase == 1){
             if(initializeFlag == false){
                 q_trajectory.clear();
-                q_trajectory.appendSample(current_time, q_init);
+                q_trajectory.appendSample(current_time, q_init.head<2>());
                 q_trajectory.appendSample(current_time+settingTime, q_extension);
                 q_trajectory.update();
                 initializeFlag = true;
@@ -188,6 +189,7 @@ int main(int argc, char** argv){
             cmd.motor[i].velocity = -(qref[i] / qref_old[i]) / control_frequency;
             qref_old[i] = qref[i];
         }
+        cmd.motor[2].position = -cmd.motor[0].position;
         cmd_pub.publish(cmd);
 
         Eigen::Vector2d p_buff = solve_sagittal_FK(qref);

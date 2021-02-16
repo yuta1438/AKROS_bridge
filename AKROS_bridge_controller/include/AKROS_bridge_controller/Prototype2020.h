@@ -1,5 +1,6 @@
 #ifndef PROTOTYPE2020_H_
 #define PROTOTYPE2020_H_
+#include <Eigen/Core>
 #include <Eigen/Dense>
 
 #define deg2rad(deg) (((deg) / 360) * 2 * M_PI)

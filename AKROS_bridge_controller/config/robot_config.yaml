@@ -23,5 +23,5 @@ motor_list:
   Wheel:
     can_id: 3
     model: AK80-6
-    Kp: 5.0
+    Kp: 10.0
     Kd: 1.0
