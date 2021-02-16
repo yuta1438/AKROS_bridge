@@ -15,7 +15,7 @@ static const double marginTime = 2.0;
 static const double settingTime = 3.0;
 static const double movingTime = 30.0;
 
-static const double wave_frequency = 1.5;       // 脚先正弦波指令の周波数[Hz]
+static const double wave_frequency = 1.0;       // 脚先正弦波指令の周波数[Hz]
 // static const double amplitude = 0.1;           // 正弦波振幅[m]
 static const double omega = 2*M_PI*wave_frequency;
 
@@ -189,7 +189,8 @@ int main(int argc, char** argv){
             cmd.motor[i].velocity = -(qref[i] / qref_old[i]) / control_frequency;
             qref_old[i] = qref[i];
         }
-        cmd.motor[2].position = -cmd.motor[0].position;
+        cmd.motor[2].position = cmd.motor[0].position; // 符号ミス？
+
         cmd_pub.publish(cmd);
 
         Eigen::Vector2d p_buff = solve_sagittal_FK(qref);
