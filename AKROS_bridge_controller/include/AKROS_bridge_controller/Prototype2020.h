@@ -8,6 +8,8 @@
 static const double l1 = 0.20;  // 大腿脚長
 static const double l2 = 0.20;  // 下腿脚長
 
+static const double initialPose[3] = {15.0f, -30.0f, 0.0};
+
 // 矢状平面での順運動学
 Eigen::Vector2d solve_sagittal_FK(Eigen::Vector2d q){
     Eigen::Vector2d p;
