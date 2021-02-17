@@ -205,23 +205,10 @@ include_directories(
 ## Add folders to be run by python nosetests
 # catkin_add_nosetests(test)
 
+add_subdirectory(src/Prototype2020)
+add_subdirectory(src/test_controller_node)
+
 
 add_executable(check_rosparam src/check_rosparam.cpp)
-add_executable(bending_stretching src/bending_stretching.cpp)
-add_executable(motor_controller src/test_controller_node/motor_controller.cpp )
-add_executable(move_to_zero src/test_controller_node/move_to_zero.cpp )
-add_executable(single_motor_controller src/test_controller_node/single_motor_controller.cpp)
-add_executable(wheel_velocity_controller src/test_controller_node/wheel_velocity_controller.cpp)
-
 add_dependencies(check_rosparam  ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
-add_dependencies(bending_stretching  ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
-add_dependencies(motor_controller  ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
-add_dependencies(single_motor_controller ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
-add_dependencies(wheel_velocity_controller ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
-
 target_link_libraries(check_rosparam ${catkin_LIBRARIES})
-target_link_libraries(bending_stretching ${catkin_LIBRARIES})
-target_link_libraries(motor_controller ${catkin_LIBRARIES})
-target_link_libraries(move_to_zero ${catkin_LIBRARIES})
-target_link_libraries(single_motor_controller ${catkin_LIBRARIES})
-target_link_libraries(wheel_velocity_controller ${catkin_LIBRARIES})
