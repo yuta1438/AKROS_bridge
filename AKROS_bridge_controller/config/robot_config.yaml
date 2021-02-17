@@ -8,7 +8,7 @@ motor_list:
     Kp: 150.0
     Kd: 1.0
     offset: -70.7  # [deg]
-    # inverseDirection: true
+    inverseDirection: true
     joint_limit: [-90.0, 90.0] #[deg]
 
   Knee:
@@ -17,7 +17,7 @@ motor_list:
     Kp: 75.0
     Kd: 1.0
     offset: 30.0  # [deg]
-    # inverseDirection: true
+    inverseDirection: true
     joint_limit: [15.0, 135.0] #deg
     
   Wheel:
@@ -25,3 +25,5 @@ motor_list:
     model: AK80-6
     Kp: 10.0
     Kd: 1.0
+    offset: 0.0  # [deg]
+    inverseDirection: false

@@ -106,6 +106,14 @@ AKROS_bridge_converter::AKROS_bridge_converter(ros::NodeHandle* nh_) : spinner(0
             m.offset = convertOffset(deg2rad(static_cast<double>(params_iterator->second["offset"])), m.P_MIN, m.P_MAX, POSITION_BIT_NUM);
         }
 
+
+        // モータ出力を逆にするかどうか
+        if(params_iterator->second["inverseDirection"].valid()){
+            m.inverseDirection = static_cast<bool>(params_iterator->second["inverseDirection"]);
+        }else{
+            m.inverseDirection = false;
+        }
+
         ROS_INFO("Add motor name: %s, CAN_ID: %i, model: %s", m.name.c_str(), m.CAN_ID, m.model.c_str());
         motor.push_back(m); // 新しいベクトル要素を作成
     }
@@ -198,9 +206,9 @@ void AKROS_bridge_converter::pack_cmd(AKROS_bridge_msgs::motor_can_cmd_single &c
 void AKROS_bridge_converter::pack_reply(AKROS_bridge_msgs::motor_reply_single &reply_, uint8_t index_){
     std::lock_guard<std::mutex> lock(motor_mutex);
     reply_.CAN_ID   = motor[index_].CAN_ID;
-    reply_.position = uint_to_float(motor[index_].position + (motor[index_].offset+motor[index_].error), motor[index_].P_MIN, motor[index_].P_MAX, POSITION_BIT_NUM);
-    reply_.velocity = uint_to_float(motor[index_].velocity, motor[index_].V_MIN, motor[index_].V_MAX, VELOCITY_BIT_NUM);
-    reply_.effort   = uint_to_float(motor[index_].effort,   T_MIN, T_MAX, EFFORT_BIT_NUM);
+    reply_.position = signChange(uint_to_float(motor[index_].position + (motor[index_].offset+motor[index_].error), motor[index_].P_MIN, motor[index_].P_MAX, POSITION_BIT_NUM), motor[index_].inverseDirection);
+    reply_.velocity = signChange(uint_to_float(motor[index_].velocity, motor[index_].V_MIN, motor[index_].V_MAX, VELOCITY_BIT_NUM), motor[index_].inverseDirection);
+    reply_.effort   = signChange(uint_to_float(motor[index_].effort,   T_MIN, T_MAX, EFFORT_BIT_NUM), motor[index_].inverseDirection);
 }
 
 
@@ -212,14 +220,15 @@ void AKROS_bridge_converter::unpack_cmd(const AKROS_bridge_msgs::motor_cmd_singl
 
     // ソフト上で回転角を制限
     // 制限角がある場合は制限角を超えないようにフィルタ．
+    // ロボットとモータの回転方向が逆だったら反転
     if(motor[index_].isLimitExist){
-        motor[index_].position_ref = float_to_uint(fminf(fmaxf(motor[index_].lower_limit, cmd_.position), motor[index_].upper_limit), motor[index_].P_MIN, motor[index_].P_MAX, POSITION_BIT_NUM);
+        motor[index_].position_ref = float_to_uint(fminf(fmaxf(motor[index_].lower_limit, signChange(cmd_.position, motor[index_].inverseDirection)), motor[index_].upper_limit), motor[index_].P_MIN, motor[index_].P_MAX, POSITION_BIT_NUM);
     }else{  // 制限がない場合は特にフィルタしない
-        motor[index_].position_ref = float_to_uint(fminf(fmaxf(motor[index_].P_MIN, cmd_.position), motor[index_].P_MAX), motor[index_].P_MIN, motor[index_].P_MAX, POSITION_BIT_NUM);
+        motor[index_].position_ref = float_to_uint(fminf(fmaxf(motor[index_].P_MIN, signChange(cmd_.position, motor[index_].inverseDirection)), motor[index_].P_MAX), motor[index_].P_MIN, motor[index_].P_MAX, POSITION_BIT_NUM);
     }
     
-    motor[index_].velocity_ref = float_to_uint(fminf(fmaxf(motor[index_].V_MIN, cmd_.velocity), motor[index_].V_MAX), motor[index_].V_MIN, motor[index_].V_MAX, VELOCITY_BIT_NUM);
-    motor[index_].effort_ref   = float_to_uint(fminf(fmaxf(T_MIN, cmd_.effort), T_MAX), T_MIN, T_MAX, EFFORT_BIT_NUM);
+    motor[index_].velocity_ref = float_to_uint(fminf(fmaxf(motor[index_].V_MIN, signChange(cmd_.position, motor[index_].inverseDirection)), motor[index_].V_MAX), motor[index_].V_MIN, motor[index_].V_MAX, VELOCITY_BIT_NUM);
+    motor[index_].effort_ref   = float_to_uint(fminf(fmaxf(T_MIN, signChange(cmd_.effort, motor[index_].inverseDirection)), T_MAX), T_MIN, T_MAX, EFFORT_BIT_NUM);
     motor[index_].Kp           = float_to_uint(fminf(fmaxf(KP_MIN, cmd_.Kp), KP_MAX), KP_MIN, KP_MAX, KP_BIT_NUM);
     motor[index_].Kd           = float_to_uint(fminf(fmaxf(KD_MIN, cmd_.Kd), KD_MAX), KD_MIN, KD_MAX, KD_BIT_NUM);
 }

@@ -126,8 +126,8 @@ int main(int argc, char** argv){
             }
         }
         for(int i=0; i<2; i++){
-            cmd.motor[i].position = -qref[i];
-            cmd.motor[i].velocity = -(qref[i] / qref_old[i]) / control_frequency;
+            cmd.motor[i].position = qref[i];
+            cmd.motor[i].velocity = (qref[i] / qref_old[i]) / control_frequency;
             qref_old[i] = qref[i];
         }
         cmd_pub.publish(cmd);
@@ -185,11 +185,11 @@ int main(int argc, char** argv){
         }
 
         for(int i=0; i<2; i++){
-            cmd.motor[i].position = -qref[i];
-            cmd.motor[i].velocity = -(qref[i] / qref_old[i]) / control_frequency;
+            cmd.motor[i].position = qref[i];
+            cmd.motor[i].velocity = (qref[i] / qref_old[i]) / control_frequency;
             qref_old[i] = qref[i];
         }
-        cmd.motor[2].position = cmd.motor[0].position; // 符号ミス？
+        cmd.motor[2].position = -cmd.motor[0].position; // 符号に気をつける
 
         cmd_pub.publish(cmd);
 

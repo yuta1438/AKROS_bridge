@@ -80,8 +80,9 @@ typedef struct motor_status_{
 
     // 可動角
     bool isLimitExist = false;  // 無限回転可能かそうでないか？
-    float upper_limit;  // [rad]
-    float lower_limit;  //[rad]
+    bool inverseDirection = false;  // モータの回転を逆にする
+    float upper_limit;  // 上限可動角[rad]
+    float lower_limit;  // 下限可動角[rad]
 
     uint16_t position = CENTER_POSITION;
     uint16_t position_ref = CENTER_POSITION;

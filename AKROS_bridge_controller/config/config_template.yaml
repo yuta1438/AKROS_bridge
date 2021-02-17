@@ -9,3 +9,4 @@ motor_list:
     Kd: 1.0   # Dゲイン初期値
     offset: 70.7  # モータのゼロ点合わせ位置と実際のゼロ点との差（符号注意！）[deg]
     joint_limit: [-90.0, 90.0] # 関節可動角[deg]．ソフトウェア上で関節制限を行うため．
+    inverseDirection: true      # モータの回転方向とロボットの回転方向が逆の場合はtrueに設定！
