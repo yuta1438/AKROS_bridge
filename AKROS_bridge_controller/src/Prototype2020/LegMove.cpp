@@ -16,8 +16,8 @@ static const double control_frequency = 100.0;  // 制御周期[Hz]
 
 static const double marginTime = 1.0;
 static const double settingTime = 2.0;
-static const double movingTime1 = 1.5;
-static const double movingTime2 = 1.0;
+static const double movingTime1 = 0.3;
+static const double movingTime2 = 0.2;
 
 static const double q_initial_deg[] = {10.0, -20.0};
 
@@ -66,6 +66,8 @@ int main(int argc, char** argv){
     int phase = 0;
     int counter = 0;
     
+    qref.resize(JOINT_NUM);
+    qref_old.resize(JOINT_NUM);
     qref = Eigen::VectorXd::Zero(JOINT_NUM);
     qref_old = Eigen::VectorXd::Zero(JOINT_NUM);
 
@@ -120,7 +122,7 @@ int main(int argc, char** argv){
         else if(phase == 1){
             if(!initializeFlag){
                 joint_trajectory.clear();
-                joint_trajectory.appendSample(current_time, q_init);
+                joint_trajectory.appendSample(current_time, q_init.head<2>());
                 joint_trajectory.appendSample(current_time+settingTime, q_initial);
                 joint_trajectory.update();
                 initializeFlag = true;
@@ -160,8 +162,8 @@ int main(int argc, char** argv){
         
         if(phase == 2){
             if(initializeFlag == false){
-                Eigen::Vector2d delta_p1(0.055, 0.24);
-                Eigen::Vector2d delta_p2(0.11, 0.23);
+                Eigen::Vector2d delta_p1(0.045, 0.24);
+                Eigen::Vector2d delta_p2(0.13, 0.23);
 
                 leg_trajectory.clear();
                 leg_trajectory.appendSample(current_time, p_init);
