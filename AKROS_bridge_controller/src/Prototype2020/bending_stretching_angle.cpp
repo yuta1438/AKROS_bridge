@@ -2,6 +2,7 @@
 // 矢状平面内での屈伸運動(Bending & Stretching)
 // 石沢から振幅を指定できるようにしたいとの要望あり
 // ただし，initialPoseを基準とする！
+// これは旧バージョン
 
 #include <iostream>
 #include <ros/ros.h>
@@ -20,7 +21,7 @@ static const double settingTime = 3.0;
 static const double movingTime = 30.0;
 
 static const double wave_frequency = 1.0;       // 脚先正弦波指令の周波数[Hz]
-static const double amplitude = 0.1;           // 正弦波振幅[m]
+// static const double amplitude = 0.1;           // 正弦波振幅[m]
 static const double omega = 2*M_PI*wave_frequency;
 
 static const double q_extention_deg[2] = {15.0f, -30.0f};   // 一番Kneeを伸ばすポーズ
@@ -85,8 +86,12 @@ int main(int argc, char** argv){
 
     // 各種計算
     Eigen::Vector2d q_extension(deg2rad(q_extention_deg[0]), deg2rad(q_extention_deg[1]));
+    Eigen::Vector2d q_flexion(deg2rad(q_flexion_deg[0]), deg2rad(q_flexion_deg[1]));
     Eigen::Vector2d p_extension = solve_sagittal_FK(q_extension);
-    p_offset << p_extension[0], p_extension[1]+amplitude;   // 振動中心点
+    Eigen::Vector2d p_flexion = solve_sagittal_FK(q_flexion);
+
+    p_offset = (p_extension + p_flexion) / 2.0;
+    double amplitude = abs((p_extension[1] - p_flexion[1]) / 2.0);
 
     for(auto param_itr=rosparams.begin(); param_itr!=rosparams.end(); ++param_itr){
         cmd.motor[counter].CAN_ID = static_cast<int>(param_itr->second["can_id"]);
@@ -94,7 +99,7 @@ int main(int argc, char** argv){
         cmd.motor[counter].Kd     = static_cast<double>(param_itr->second["Kd"]);
         cmd.motor[counter].effort = 0.0;
         counter++;
-    }点
+    }
 
     ROS_INFO("flexion controller start !");
     ros::Time t_start = ros::Time::now();
