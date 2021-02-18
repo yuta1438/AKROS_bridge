@@ -19,7 +19,7 @@ static const double marginTime = 2.0;
 static const double settingTime = 3.0;
 static const double movingTime = 30.0;
 
-static const double wave_frequency = 1.5;       // 脚先正弦波指令の周波数[Hz]
+static const double wave_frequency = 0.5;       // 脚先正弦波指令の周波数[Hz]
 static const double amplitude = 0.1;           // 正弦波振幅[m]
 static const double omega = 2*M_PI*wave_frequency;
 

@@ -14,8 +14,8 @@
 static const double control_frequency = 100.0;  // 制御周期[Hz]
 
 // 屈伸開始時の脚先位置
-static const double offset_x = 0.1;
-static const double offset_z = -0.35;
+static const double offset_x = 0.2;
+static const double offset_z = -0.3;
 
 static const double marginTime = 2.0;
 static const double settingTime = 3.0;
@@ -170,29 +170,12 @@ int main(int argc, char** argv){
 
             if(current_time > movingTime){
                 initializeFlag = false;
-                phase = 3;
-            }
-        }
-
-        // 終了
-        else if(phase == 3){
-            if(initializeFlag == false){
-                ROS_INFO("phase 3 : finish and move to initial pose");
-                Eigen::Vector2d q_last(qref[0], qref[1]);
-                joint_trajectory.clear();
-                joint_trajectory.appendSample(current_time, q_last);
-                joint_trajectory.appendSample(current_time + 3.0, Eigen::Vector2d(initialPose[0], initialPose[1]));
-                joint_trajectory.update();
-                initializeFlag = true;
-            }
-            
-            qref = joint_trajectory.interpolate(current_time);
-
-            if(current_time > joint_trajectory.domainUpper()){
                 ROS_INFO("controller finished !");
                 break;
             }
         }
+
+    
 
         for(int i=0; i<2; i++){
             cmd.motor[i].position = qref[i];
