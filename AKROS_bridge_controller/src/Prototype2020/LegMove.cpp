@@ -14,8 +14,8 @@
 
 static const double control_frequency = 100.0;  // 制御周期[Hz]
 static const double marginTime = 1.0;
-static const double movingTime1 = 0.6;
-static const double movingTime2 = 0.4;
+static const double movingTime1 = 6.0;
+static const double movingTime2 = 4.0;
 
 
 ros::Publisher cmd_pub;

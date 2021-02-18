@@ -347,7 +347,7 @@ bool AKROS_bridge_converter::currentState_Cb(AKROS_bridge_msgs::currentState::Re
 
     for(int index_=0; index_<motor_num; index_++){
         res_.reply.motor[index_].CAN_ID   = motor[index_].CAN_ID;
-        res_.reply.motor[index_].position = uint_to_float(motor[index_].position + (motor[index_].offset+motor[index_].error), motor[index_].P_MIN, motor[index_].P_MAX, POSITION_BIT_NUM);
+        res_.reply.motor[index_].position = signChange(uint_to_float(motor[index_].position + (motor[index_].offset+motor[index_].error), motor[index_].P_MIN, motor[index_].P_MAX, POSITION_BIT_NUM), motor[index_].inverseDirection);
         res_.reply.motor[index_].velocity = uint_to_float(motor[index_].velocity, motor[index_].V_MIN, motor[index_].V_MAX, VELOCITY_BIT_NUM);
         res_.reply.motor[index_].effort   = uint_to_float(motor[index_].effort,   T_MIN, T_MAX, EFFORT_BIT_NUM);
     }
