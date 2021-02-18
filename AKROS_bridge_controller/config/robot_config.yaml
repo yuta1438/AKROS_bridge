@@ -14,7 +14,7 @@ motor_list:
   Knee:
     can_id: 2
     model: AK10-9
-    Kp: 75.0
+    Kp: 100.0
     Kd: 1.0
     offset: 30.0  # [deg]
     inverseDirection: true

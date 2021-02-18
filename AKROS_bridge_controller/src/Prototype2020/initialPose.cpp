@@ -16,8 +16,6 @@ static const double control_frequency = 100.0;  // 制御周期[Hz]
 static const double marginTime = 1.0;
 static const double settingTime = 3.0;
 
-static const double q_target_deg[JOINT_NUM] = {15.0f, -30.0f, 0.0f};   // 基準ポーズ
-
 
 ros::Publisher cmd_pub;
 AKROS_bridge_msgs::motor_cmd cmd;
@@ -29,7 +27,7 @@ int motor_num;
 bool initializeFlag = false;
 Eigen::VectorXd qref, qref_old;
 
-cnoid::Interpolator<Eigen::VectorXd> q_trajectory; // 関節空間での補間器
+cnoid::Interpolator<Eigen::VectorXd> joint_trajectory; // 関節空間での補間器
 
 
 int main(int argc, char** argv){
@@ -67,7 +65,7 @@ int main(int argc, char** argv){
 
     if(currentState_client.call(currentState_srv)){
         for(int i=0; i<JOINT_NUM; i++){
-            q_target[i] = deg2rad(q_target_deg[i]);
+            q_target[i] = deg2rad(initialPose[i]);
             q_init[i] = currentState_srv.response.reply.motor[i].position;
             // std::cout << "q_init[" << i << "] : " << q_init[i] << std::endl; // debug
         }
@@ -103,16 +101,16 @@ int main(int argc, char** argv){
         // 初期位置から基準Poseへ遷移
         else if(phase == 1){
             if(initializeFlag == false){
-                q_trajectory.clear();
-                q_trajectory.appendSample(current_time, q_init);
-                q_trajectory.appendSample(current_time+settingTime, q_target);
-                q_trajectory.update();
+                joint_trajectory.clear();
+                joint_trajectory.appendSample(current_time, q_init);
+                joint_trajectory.appendSample(current_time+settingTime, q_target);
+                joint_trajectory.update();
                 initializeFlag = true;
             }
 
-            qref = q_trajectory.interpolate(current_time);
+            qref = joint_trajectory.interpolate(current_time);
 
-            if(current_time > q_trajectory.domainUpper()){
+            if(current_time > joint_trajectory.domainUpper()){
                 initializeFlag = false;
                 break;
             }

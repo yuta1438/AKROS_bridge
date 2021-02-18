@@ -6,7 +6,7 @@
 #include <iostream>
 #include <ros/ros.h>
 #include <AKROS_bridge_msgs/motor_cmd.h>
-#include <AKROS_bridge_controller/Prototype2020.h>
+#include <AKROS_bridge_controller/Prototype2020.h>  // ロボットに関するヘッダファイル
 #include <AKROS_bridge_controller/Interpolator.h>   // choreonoidの補間ライブラリ
 #include <AKROS_bridge_msgs/currentState.h>
 #include <std_msgs/Float32.h>
@@ -65,11 +65,10 @@ int main(int argc, char** argv){
     }
 
     cmd.motor.resize(motor_num);
-
-    int phase = 0;
-    int counter = 0;
     qref.resize(motor_num);
     qref_old.resize(motor_num);
+    int phase = 0;
+    int counter = 0;
 
     // 初期状態を取得
     Eigen::VectorXd q_init(motor_num);

@@ -1,5 +1,6 @@
 #ifndef PROTOTYPE2020_H_
 #define PROTOTYPE2020_H_
+#include <ros/ros.h>
 #include <Eigen/Core>
 #include <Eigen/Dense>
 
@@ -25,12 +26,24 @@ Eigen::Vector2d solve_sagittal_IK(Eigen::Vector2d p){
     Eigen::Vector2d q;
     double L = sqrt(p[0]*p[0] + p[1]*p[1]);
     q = Eigen::Vector2d::Zero();
-    
-    // q[0] = -atan2(p[0], p[1]) + acos((pow(L, 2) + pow(l1, 2) - pow(l2, 2)) / (2 * L * l1));
-    // q[1] = -M_PI + acos((pow(l1, 2.0) + pow(l2, 2.0) - pow(L, 2)) / (2 * l1 * l2));
-    
-    // q[0] = atan2(p.y(), -p.z());
-    double y = 0.0;
+
+    q[0] = -atan2(p[0], -p[1]) + acos((pow(L, 2) + pow(l1, 2) - pow(l2, 2)) / (2 * L * l1));
+    q[1] = -M_PI + acos((pow(l1, 2.0) + pow(l2, 2.0) - pow(L, 2)) / (2 * l1 * l2));
+
+    return q;
+}
+
+// 矢状平面での逆運動学
+// エラー確認付き
+// 引数には脚先位置p = [x, z]Tを渡すこと！
+Eigen::Vector2d solve_sagittal_IK(Eigen::Vector2d p, bool &error){
+    Eigen::Vector2d q;
+    double L = sqrt(p[0]*p[0] + p[1]*p[1]);
+
+    error = (L>(l1+l2)) ? true : false;
+
+    q = Eigen::Vector2d::Zero();
+
     q[0] = -atan2(p[0], -p[1]) + acos((pow(L, 2) + pow(l1, 2) - pow(l2, 2)) / (2 * L * l1));
     q[1] = -M_PI + acos((pow(l1, 2.0) + pow(l2, 2.0) - pow(L, 2)) / (2 * l1 * l2));
 

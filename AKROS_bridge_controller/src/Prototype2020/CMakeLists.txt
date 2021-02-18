@@ -12,3 +12,8 @@ target_link_libraries(Prototype2020_bending_stretching ${catkin_LIBRARIES})
 add_executable(Prototype2020_legmove LegMove.cpp)
 add_dependencies(Prototype2020_legmove  ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 target_link_libraries(Prototype2020_legmove ${catkin_LIBRARIES})
+
+# Prototype2020_bending_stretching_offset
+add_executable(Prototype2020_bending_stretching_offset bending_stretching_offset.cpp)
+add_dependencies(Prototype2020_bending_stretching_offset  ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+target_link_libraries(Prototype2020_bending_stretching_offset ${catkin_LIBRARIES})

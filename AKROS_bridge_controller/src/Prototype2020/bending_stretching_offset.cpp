@@ -1,13 +1,10 @@
 // 単脚用プログラム
-// 矢状平面内での屈伸運動(Bending & Stretching)
-// 石沢から振幅を指定できるようにしたいとの要望あり
-// ただし，initialPoseを基準とする！
-// これは旧バージョン
+// 矢状平面内でx軸方向にオフセットをもたせた屈伸運動(Bending & Stretching)
 
 #include <iostream>
 #include <ros/ros.h>
 #include <AKROS_bridge_msgs/motor_cmd.h>
-#include <AKROS_bridge_controller/Prototype2020.h>
+#include <AKROS_bridge_controller/Prototype2020.h>  // ロボットに関するヘッダファイル
 #include <AKROS_bridge_controller/Interpolator.h>   // choreonoidの補間ライブラリ
 #include <AKROS_bridge_msgs/currentState.h>
 #include <std_msgs/Float32.h>
@@ -16,17 +13,19 @@
 
 static const double control_frequency = 100.0;  // 制御周期[Hz]
 
+// 屈伸開始時の脚先位置
+static const double offset_x = 0.1;
+static const double offset_z = -0.35;
+
 static const double marginTime = 2.0;
 static const double settingTime = 3.0;
 static const double movingTime = 30.0;
 
-static const double wave_frequency = 1.0;       // 脚先正弦波指令の周波数[Hz]
-// static const double amplitude = 0.1;           // 正弦波振幅[m]
+static const double wave_frequency = 0.5;       // 脚先正弦波指令の周波数[Hz]
+static const double amplitude = 0.05;           // 正弦波振幅[m]
 static const double omega = 2*M_PI*wave_frequency;
 
-static const double q_extention_deg[2] = {15.0f, -30.0f};   // 一番Kneeを伸ばすポーズ
-static const double q_flexion_deg[2] = {60.0f, -120.0f};    // 一番Kneeを曲げるポーズ
-Eigen::Vector2d pref, p_offset;
+Eigen::Vector2d pref, p_offset, p_init;
 Eigen::VectorXd qref, qref_old;
 
 ros::Publisher cmd_pub;
@@ -42,7 +41,7 @@ AKROS_bridge_msgs::currentState currentState_srv;
 int motor_num;
 bool initializeFlag = false;
 
-cnoid::Interpolator<Eigen::Vector2d> q_trajectory; // 関節空間での補間器
+cnoid::Interpolator<Eigen::Vector2d> joint_trajectory; // 関節空間での補間器
 
 
 int main(int argc, char** argv){
@@ -66,11 +65,10 @@ int main(int argc, char** argv){
     }
 
     cmd.motor.resize(motor_num);
-
-    int phase = 0;
-    int counter = 0;
     qref.resize(motor_num);
     qref_old.resize(motor_num);
+    int phase = 0;
+    int counter = 0;
 
     // 初期状態を取得
     Eigen::VectorXd q_init(motor_num);
@@ -85,13 +83,14 @@ int main(int argc, char** argv){
     }
 
     // 各種計算
-    Eigen::Vector2d q_extension(deg2rad(q_extention_deg[0]), deg2rad(q_extention_deg[1]));
-    Eigen::Vector2d q_flexion(deg2rad(q_flexion_deg[0]), deg2rad(q_flexion_deg[1]));
-    Eigen::Vector2d p_extension = solve_sagittal_FK(q_extension);
-    Eigen::Vector2d p_flexion = solve_sagittal_FK(q_flexion);
+    p_offset << offset_x, offset_z;   // 振動中心点
+    Eigen::Vector2d q_initialize(2);
+    bool isIKsucceeded;
+    q_initialize = solve_sagittal_IK(p_offset, isIKsucceeded);
+    ROS_ASSERT(!isIKsucceeded);
+    if(isIKsucceeded)   ROS_ERROR("IK out of range");
 
-    p_offset = (p_extension + p_flexion) / 2.0;
-    double amplitude = abs((p_extension[1] - p_flexion[1]) / 2.0);
+    
 
     for(auto param_itr=rosparams.begin(); param_itr!=rosparams.end(); ++param_itr){
         cmd.motor[counter].CAN_ID = static_cast<int>(param_itr->second["can_id"]);
@@ -120,16 +119,16 @@ int main(int argc, char** argv){
         else if(phase == 1){
             if(initializeFlag == false){
                 ROS_INFO("phase 1");
-                q_trajectory.clear();
-                q_trajectory.appendSample(current_time, q_init.head<2>());
-                q_trajectory.appendSample(current_time+settingTime, q_extension);
-                q_trajectory.update();
+                joint_trajectory.clear();
+                joint_trajectory.appendSample(current_time, q_init.head<2>());
+                joint_trajectory.appendSample(current_time+settingTime, q_initialize);
+                joint_trajectory.update();
                 initializeFlag = true;
             }
 
-            qref = q_trajectory.interpolate(current_time);
+            qref = joint_trajectory.interpolate(current_time);
 
-            if(current_time > q_trajectory.domainUpper()){
+            if(current_time > joint_trajectory.domainUpper()){
                 initializeFlag = false;
                 phase = 2;
                 break;
@@ -157,7 +156,7 @@ int main(int argc, char** argv){
 
     t_start = ros::Time::now(); // リスタート
     while(ros::ok()){
-        double current_time = (ros::Time::now() - t_start).toSec() - marginTime; // 現在時刻
+        double current_time = (ros::Time::now() - t_start).toSec(); // 現在時刻
         // 屈伸
         if(phase == 2){
             if(initializeFlag == false){    // 各phaseの最初の一回だけ実行
@@ -165,11 +164,9 @@ int main(int argc, char** argv){
                 pref[0] = p_offset[0];
                 initializeFlag = true;
             }
-            pref[1] = p_offset[1] - amplitude * cos(omega * (current_time));
+            pref[1] = (p_offset[1] + amplitude) - amplitude * cos(omega * (current_time));
             z.data = pref[1];
             qref.head<2>() = solve_sagittal_IK(pref);
-
-            
 
             if(current_time > movingTime){
                 initializeFlag = false;
@@ -182,16 +179,16 @@ int main(int argc, char** argv){
             if(initializeFlag == false){
                 ROS_INFO("phase 3 : finish and move to initial pose");
                 Eigen::Vector2d q_last(qref[0], qref[1]);
-                q_trajectory.clear();
-                q_trajectory.appendSample(current_time, q_last);
-                q_trajectory.appendSample(current_time + 3.0, q_extension);
-                q_trajectory.update();
+                joint_trajectory.clear();
+                joint_trajectory.appendSample(current_time, q_last);
+                joint_trajectory.appendSample(current_time + 3.0, Eigen::Vector2d(initialPose[0], initialPose[1]));
+                joint_trajectory.update();
                 initializeFlag = true;
             }
             
-            qref = q_trajectory.interpolate(current_time);
+            qref = joint_trajectory.interpolate(current_time);
 
-            if(current_time > q_trajectory.domainUpper()){
+            if(current_time > joint_trajectory.domainUpper()){
                 ROS_INFO("controller finished !");
                 break;
             }
