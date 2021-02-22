@@ -4,10 +4,17 @@
 #include <Eigen/Core>
 #include <Eigen/Dense>
 
+#define HIP     0
+#define KNEE    1
+#define WHEEL   2
+
 #define deg2rad(deg) (((deg) / 360) * 2 * M_PI)
 #define rad2deg(rad) (((rad) / 2 / M_PI) * 360)
+
+// Robot Parameters
 static const double l1 = 0.20;  // 大腿脚長
 static const double l2 = 0.20;  // 下腿脚長
+static const double wheel_D = 0.1;  // 車輪直径
 
 static const double initialPose[3] = {15.0f, -30.0f, 0.0};
 
@@ -34,7 +41,7 @@ Eigen::Vector2d solve_sagittal_IK(Eigen::Vector2d p){
 }
 
 // 矢状平面での逆運動学
-// エラー確認付き
+// エラー確認付き.　特異姿勢となってしまう場合はerrorが真となる;
 // 引数には脚先位置p = [x, z]Tを渡すこと！
 Eigen::Vector2d solve_sagittal_IK(Eigen::Vector2d p, bool &error){
     Eigen::Vector2d q;
