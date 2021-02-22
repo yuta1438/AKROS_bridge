@@ -3,7 +3,7 @@
 #include <ros/ros.h>
 #include <AKROS_bridge_converter/AKROS_bridge_converter.h>
 
-#define ROS_Hz      200
+#define ROS_Hz      100
 
 
 int main(int argc, char** argv){
@@ -14,7 +14,6 @@ int main(int argc, char** argv){
     AKROS_bridge_converter converter(&nh);
 
     ROS_INFO("Converter Ready !");
-    // spinner.start();
 
     while(ros::ok()){
         converter.publish_cmd();

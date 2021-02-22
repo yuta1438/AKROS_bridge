@@ -9,26 +9,26 @@
 #define AK10_9_OLD      2
 #define AK80_6_OLD      3
 */
-
+/*
 enum models{
     AK10_9,
     AK80_6,
     AK10_9_OLD,
     AK80_6_OLD,
     num
-};
+};*/
 
 // AK10-9(new)
 #define AK10_9_P_MIN   -12.5f
 #define AK10_9_P_MAX   12.5f
-#define AK10_9_V_MIN   -12.5f
-#define AK10_9_V_MAX   12.5f
+#define AK10_9_V_MIN   -45.0f
+#define AK10_9_V_MAX   45.0f
 
 // AK80-6(new)
 #define AK80_6_P_MIN   -12.5f
 #define AK80_6_P_MAX   12.5f
-#define AK80_6_V_MIN   -22.5f
-#define AK80_6_V_MAX   22.5f
+#define AK80_6_V_MIN   -45.0f
+#define AK80_6_V_MAX   45.0f
 
 // AK10-9(old)
 #define AK10_9_OLD_P_MIN   -95.5f
@@ -66,15 +66,23 @@ enum models{
 typedef struct motor_status_{
     std::string name;   // モータ名前
     std::string model;  // モータ型番
-    uint8_t CAN_ID = 0; 
+    uint8_t CAN_ID = 0; // モータのCAN_ID．初期値は0．
 
     bool servo_mode = false;    // サーボ状態
-    int error = 0;              // モータの原点と関節の原点の誤差値
-    
+    bool isExceedLimit = false; // 可動角を超えているかどうか？
+    int error = 0;              // モータの原点と関節の原点の誤差値（デジタル値）．初期値は0．
+    int offset = 0;             // モータのゼロ点合わせ位置と実際のゼロ点との差（符号注意！）
+
     float P_MAX;
     float P_MIN;
     float V_MAX;
     float V_MIN;
+
+    // 可動角
+    bool isLimitExist = false;  // 無限回転可能かそうでないか？
+    bool inverseDirection = false;  // モータの回転を逆にする
+    float upper_limit;  // 上限可動角[rad]
+    float lower_limit;  // 下限可動角[rad]
 
     uint16_t position = CENTER_POSITION;
     uint16_t position_ref = CENTER_POSITION;

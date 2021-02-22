@@ -49,10 +49,12 @@ void CAN_controller::deserialize_reply(const CANMessage& msg_){
 
 // モータから受け取った情報をmotor_statusに格納
 void CAN_controller::can_send(uint8_t index_){
+    __disable_irq();
     CANMessage msg_;
     msg_.id = motor[index_].CAN_ID;
     serialize_cmd(msg_);
     can.write(msg_);
+    __enable_irq();
 }
 
 
@@ -97,6 +99,7 @@ void CAN_controller::exit_control_mode(uint8_t CAN_ID_){
     }
 }
 
+
 // set the current motor position to zero
 void CAN_controller::set_position_to_zero(uint8_t CAN_ID_){
     CANMessage msg_;
@@ -131,7 +134,8 @@ uint8_t CAN_controller::getMotorNum(void){
     return motor.size();
 }
 
-// モータのCAN_IDとvectorの番号は異なるのでそれを求める関数
+
+// モータのCAN_IDとvectorのindexは異なるのでそれを求める関数
 uint8_t CAN_controller::find_index(uint8_t CAN_ID_){
     for(uint8_t i=0; i<motor.size(); i++){
         if(motor[i].CAN_ID == CAN_ID_){
