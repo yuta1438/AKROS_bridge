@@ -117,7 +117,7 @@ int main(int argc, char** argv){
         }
         for(int i=0; i<JOINT_NUM; i++){
             cmd.motor[i].position = qref[i];
-            cmd.motor[i].velocity = (qref[i] / qref_old[i]) / control_frequency;
+            cmd.motor[i].velocity = (qref[i] - qref_old[i]) * control_frequency;
         }
         qref_old = qref;
         cmd_pub.publish(cmd);

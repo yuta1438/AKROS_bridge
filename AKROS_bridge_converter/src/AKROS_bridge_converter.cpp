@@ -227,7 +227,7 @@ void AKROS_bridge_converter::unpack_cmd(const AKROS_bridge_msgs::motor_cmd_singl
         motor[index_].position_ref = float_to_uint(fminf(fmaxf(motor[index_].P_MIN, signChange(cmd_.position, motor[index_].inverseDirection)), motor[index_].P_MAX), motor[index_].P_MIN, motor[index_].P_MAX, POSITION_BIT_NUM);
     }
     
-    motor[index_].velocity_ref = float_to_uint(fminf(fmaxf(motor[index_].V_MIN, signChange(cmd_.position, motor[index_].inverseDirection)), motor[index_].V_MAX), motor[index_].V_MIN, motor[index_].V_MAX, VELOCITY_BIT_NUM);
+    motor[index_].velocity_ref = float_to_uint(fminf(fmaxf(motor[index_].V_MIN, signChange(cmd_.velocity, motor[index_].inverseDirection)), motor[index_].V_MAX), motor[index_].V_MIN, motor[index_].V_MAX, VELOCITY_BIT_NUM);
     motor[index_].effort_ref   = float_to_uint(fminf(fmaxf(T_MIN, signChange(cmd_.effort, motor[index_].inverseDirection)), T_MAX), T_MIN, T_MAX, EFFORT_BIT_NUM);
     motor[index_].Kp           = float_to_uint(fminf(fmaxf(KP_MIN, cmd_.Kp), KP_MAX), KP_MIN, KP_MAX, KP_BIT_NUM);
     motor[index_].Kd           = float_to_uint(fminf(fmaxf(KD_MIN, cmd_.Kd), KD_MAX), KD_MIN, KD_MAX, KD_BIT_NUM);

@@ -23,7 +23,7 @@ motor_list:
   Wheel:
     can_id: 3
     model: AK80-6
-    Kp: 30.0
-    Kd: 1.0
+    Kp: 100.0
+    Kd: 3.0
     offset: 0.0  # [deg]
     inverseDirection: false

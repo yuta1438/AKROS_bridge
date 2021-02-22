@@ -16,16 +16,12 @@ static const double control_frequency = 100.0;  // 制御周期[Hz]
 static const double marginTime = 1.0;       // 待機時間[s]
 static const double settingTime = 2.0;      // initialPose遷移時間[s]
 
-static const double movingTime = 5.0;       // 移動時間[s]
+static const double movingTime = 1.0;       // 移動時間[s]
 static const double movingDistance = 1.0;   // 目標移動距離[m]
-
-static const double q_initial_deg[] = {10.0, -20.0};    // 可動角が心配なので，この実験ではこの角度を初期値とした
 
 ros::Publisher cmd_pub;
 AKROS_bridge_msgs::motor_cmd cmd;
 
-//ros::Publisher x_pub, z_pub;
-//std_msgs::Float32 x_value, z_value;
 
 ros::ServiceClient currentState_client;
 AKROS_bridge_msgs::currentState currentState_srv;
@@ -36,7 +32,6 @@ Eigen::VectorXd qref, qref_old;
 
 
 cnoid::Interpolator<Eigen::VectorXd> joint_trajectory;  // 関節空間での補間器
-cnoid::Interpolator<Eigen::Vector2d> leg_trajectory; // 作業空間での補間器
 cnoid::Interpolator<Eigen::Vector2d> wheel_trajectory;
 
 
@@ -46,8 +41,6 @@ int main(int argc, char** argv){
     ros::Rate loop_rate(control_frequency);
 
     cmd_pub = nh.advertise<AKROS_bridge_msgs::motor_cmd>("motor_cmd", 1);
-    // x_pub = nh.advertise<std_msgs::Float32>("x", 1);
-    // z_pub = nh.advertise<std_msgs::Float32>("z", 1);
 
     currentState_client = nh.serviceClient<AKROS_bridge_msgs::currentState>("current_state");
 
@@ -81,7 +74,6 @@ int main(int argc, char** argv){
     if(currentState_client.call(currentState_srv)){
         for(int i=0; i<JOINT_NUM; i++){
             q_init[i] = currentState_srv.response.reply.motor[i].position;
-            // std::cout << "q_init[" << i << "] : " << q_init[i] << std::endl; // debug
         }
         qref_old = q_init;
     }else{
@@ -97,13 +89,12 @@ int main(int argc, char** argv){
         counter++;
     }
 
+    cmd.motor[WHEEL].Kp = 0.0;
+
     // 各種計算
     Eigen::VectorXd q_initial(2);
-    q_initial << deg2rad(q_initial_deg[0]), deg2rad(q_initial_deg[1]);
-    Eigen::Vector2d p_init = solve_sagittal_FK(q_initial.head<2>());   // 初期脚先位置
-    // x_value.data = p_init[0];
-    // z_value.data = p_init[1];
-
+    q_initial << deg2rad(initialPose[0]), deg2rad(initialPose[1]);
+    
     ROS_INFO("Transition to basic pose ...");
     ros::Time t_start = ros::Time::now();
 
@@ -140,12 +131,10 @@ int main(int argc, char** argv){
 
         for(int i=0; i<JOINT_NUM; i++){
             cmd.motor[i].position = qref[i];
-            cmd.motor[i].velocity = (qref[i] / qref_old[i]) / control_frequency;
+            cmd.motor[i].velocity = (qref[i] - qref_old[i]) * control_frequency;
         }
         qref_old = qref;
         cmd_pub.publish(cmd);
-        // x_pub.publish(x_value);
-        // z_pub.publish(z_value);
 
         ros::spinOnce();
         loop_rate.sleep();
@@ -162,22 +151,26 @@ int main(int argc, char** argv){
     t_start = ros::Time::now();
 
     while(ros::ok()){
-        double current_time = (ros::Time::now() - t_start).toSec() - marginTime; // 現在時刻
+        double current_time = (ros::Time::now() - t_start).toSec(); // 現在時刻
         
         if(phase == 2){
             if(initializeFlag == false){
                 wheel_trajectory.clear();
                 wheel_trajectory.appendSample(current_time, Eigen::Vector2d::Zero());
-                wheel_trajectory.appendSample(current_time+movingTime, (movingDistance/wheel_D)*Eigen::Vector2d::Ones());
+                wheel_trajectory.appendSample(current_time+movingTime, (2*movingDistance/wheel_D)*Eigen::Vector2d::Ones());
                 wheel_trajectory.update();
                 initializeFlag = true;
             }
 
             Eigen::Vector2d q_wheel_buf = wheel_trajectory.interpolate(current_time);
             qref[WHEEL] = q_wheel_buf[0];
-
+            
             if(current_time > wheel_trajectory.domainUpper()){
                 initializeFlag = false;
+                qref = qref_old;
+                cmd.motor[WHEEL].velocity = 0.0;
+                cmd_pub.publish(cmd);
+                phase = 3;
                 break;
             }
         }
@@ -185,9 +178,9 @@ int main(int argc, char** argv){
         // 車輪は速度制御のみ，他は位置，速度を指令値として与える
         for(int i=0; i<JOINT_NUM; i++){
             cmd.motor[i].position = qref[i];
-            cmd.motor[i].velocity = (qref[i] / qref_old[i]) / control_frequency;
+            cmd.motor[i].velocity = (qref[i] - qref_old[i]) * control_frequency;
         }
-
+        cmd.motor[WHEEL].position = 0.0;
         cmd.motor[WHEEL].Kp = 0.0;  // 車輪は速度制御
         qref_old = qref;
         cmd_pub.publish(cmd);
