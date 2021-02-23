@@ -1,6 +1,5 @@
 // 単脚用プログラム
-// 関節角度を変えるプログラム
-
+// 任意の関節角度に動かすプログラム
 #include <iostream>
 #include <ros/ros.h>
 #include <AKROS_bridge_msgs/motor_cmd.h>
@@ -12,20 +11,13 @@
 #define JOINT_NUM   3
 
 static const double control_frequency = 100.0;  // 制御周期[Hz]
-
 static const double marginTime = 1.0;
-static const double settingTime = 2.0;
-static const double movingTime1 = 0.3;
-static const double movingTime2 = 0.2;
+static const double settingTime = 3.0;
 
-static const double q_initial_deg[] = {10.0, -20.0};
-static const double q_target_deg[] = {60.0, -120.0};
+static const double q_target_deg[] = {60.0, -120.0, 0.0};
 
 ros::Publisher cmd_pub;
 AKROS_bridge_msgs::motor_cmd cmd;
-
-//ros::Publisher x_pub, z_pub;
-//std_msgs::Float32 x_value, z_value;
 
 ros::ServiceClient currentState_client;
 AKROS_bridge_msgs::currentState currentState_srv;
@@ -34,9 +26,7 @@ int motor_num;
 bool initializeFlag = false;
 Eigen::VectorXd qref, qref_old;
 
-
-cnoid::Interpolator<Eigen::VectorXd> joint_trajectory;  // 関節空間での補間器
-cnoid::Interpolator<Eigen::Vector2d> leg_trajectory; // 作業空間での補間器
+cnoid::Interpolator<Eigen::VectorXd> joint_trajectory; // 関節空間での補間器
 
 
 int main(int argc, char** argv){
@@ -45,9 +35,6 @@ int main(int argc, char** argv){
     ros::Rate loop_rate(control_frequency);
 
     cmd_pub = nh.advertise<AKROS_bridge_msgs::motor_cmd>("motor_cmd", 1);
-    // x_pub = nh.advertise<std_msgs::Float32>("x", 1);
-    // z_pub = nh.advertise<std_msgs::Float32>("z", 1);
-
     currentState_client = nh.serviceClient<AKROS_bridge_msgs::currentState>("current_state");
 
     // rosparamからCAN_ID，Kp, Kdを読み込む
@@ -66,8 +53,6 @@ int main(int argc, char** argv){
     int phase = 0;
     int counter = 0;
     
-    qref.resize(JOINT_NUM);
-    qref_old.resize(JOINT_NUM);
     qref = Eigen::VectorXd::Zero(JOINT_NUM);
     qref_old = Eigen::VectorXd::Zero(JOINT_NUM);
 
@@ -75,8 +60,11 @@ int main(int argc, char** argv){
     Eigen::VectorXd q_init(JOINT_NUM);
     q_init = Eigen::VectorXd::Zero(JOINT_NUM);
 
+    Eigen::VectorXd q_target(JOINT_NUM);
+
     if(currentState_client.call(currentState_srv)){
         for(int i=0; i<JOINT_NUM; i++){
+            q_target[i] = deg2rad(q_target_deg[i]);
             q_init[i] = currentState_srv.response.reply.motor[i].position;
             // std::cout << "q_init[" << i << "] : " << q_init[i] << std::endl; // debug
         }
@@ -94,18 +82,7 @@ int main(int argc, char** argv){
         counter++;
     }
 
-    // 各種計算
-    Eigen::VectorXd q_initial(2);
-    q_initial << deg2rad(q_initial_deg[0]), deg2rad(q_initial_deg[1]);
-    Eigen::Vector2d p_init = solve_sagittal_FK(q_initial.head<2>());   // 初期脚先位置
-    
-    Eigen::VectorXd q_target(2);
-    q_target << deg2rad(q_target_deg[0]), deg2rad(q_target_deg[1]);
-
-    // x_value.data = p_init[0];
-    // z_value.data = p_init[1];
-
-    ROS_INFO("Transition to basic pose ...");
+    ROS_INFO("Transition to target pose ...");
     ros::Time t_start = ros::Time::now();
 
     while(ros::ok()){
@@ -120,62 +97,20 @@ int main(int argc, char** argv){
             }
         }
 
-        // initialPoseからまずq = [10.0, -20.0][deg]の状態へ
+        // 初期位置から基準Poseへ遷移
         else if(phase == 1){
-            if(!initializeFlag){
+            if(initializeFlag == false){
                 joint_trajectory.clear();
-                joint_trajectory.appendSample(current_time, q_init.head<2>());
-                joint_trajectory.appendSample(current_time+settingTime, q_initial);
-                joint_trajectory.update();
-                initializeFlag = true;
-            }
-
-            qref.head<2>() = joint_trajectory.interpolate(current_time);
-
-            if(current_time > joint_trajectory.domainUpper()){
-                initializeFlag = false;
-                phase = 2;
-                break;
-            }
-        }
-
-        for(int i=0; i<JOINT_NUM; i++){
-            cmd.motor[i].position = qref[i];
-            cmd.motor[i].velocity = (qref[i] / qref_old[i]) / control_frequency;
-        }
-        qref_old = qref;
-        cmd_pub.publish(cmd);
-        // x_pub.publish(x_value);
-        // z_pub.publish(z_value);
-
-        ros::spinOnce();
-        loop_rate.sleep();
-    }
-
-    ROS_INFO("send s to start move ...");
-    char buff;
-    std::cin >> buff;
-
-    ROS_INFO("start moving ...");
-    t_start = ros::Time::now();
-
-    while(ros::ok()){
-        double current_time = (ros::Time::now() - t_start).toSec() - marginTime; // 現在時刻
-        
-        if(phase == 2){
-            if(!initializeFlag){
-                joint_trajectory.clear();
-                joint_trajectory.appendSample(current_time, q_initial.head<2>());
+                joint_trajectory.appendSample(current_time, q_init);
                 joint_trajectory.appendSample(current_time+settingTime, q_target);
                 joint_trajectory.update();
                 initializeFlag = true;
             }
 
-            qref.head<2>() = joint_trajectory.interpolate(current_time);
+            qref = joint_trajectory.interpolate(current_time);
 
             if(current_time > joint_trajectory.domainUpper()){
                 initializeFlag = false;
-                phase = 3;
                 break;
             }
         }
@@ -185,8 +120,6 @@ int main(int argc, char** argv){
         }
         qref_old = qref;
         cmd_pub.publish(cmd);
-        // x_pub.publish(x_value);
-        // z_pub.publish(z_value);
 
         ros::spinOnce();
         loop_rate.sleep();
