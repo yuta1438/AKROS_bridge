@@ -30,13 +30,17 @@ ros::ServiceServer speed_down;
 double wheel_vel = 0.0;
 
 bool speed_up_Cb(std_srvs::Empty::Request& req_, std_srvs::Empty::Response& res_){
-    wheel_vel += 0.5;
+    wheel_vel += 1.0;
+
+    if(wheel_vel > 45.0)    wheel_vel = 45.0;
+    
     ROS_INFO("command: %f [rad/s]", wheel_vel);
     return true;
 }
 
 bool speed_down_Cb(std_srvs::Empty::Request& req_, std_srvs::Empty::Response& res_){
-    wheel_vel -= 0.5;
+    wheel_vel -= 1.0;
+    if(wheel_vel < -45.0)   wheel_vel = -45.0;
     ROS_INFO("command: %f [rad/s]", wheel_vel);
     return true;
 }
