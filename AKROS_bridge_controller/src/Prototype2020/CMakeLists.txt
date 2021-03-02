@@ -1,7 +1,13 @@
+##  脚移動系  ##
 # Prototype2020_initialPose
 add_executable(Prototype2020_initialPose initialPose.cpp)
 add_dependencies(Prototype2020_initialPose  ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 target_link_libraries(Prototype2020_initialPose ${catkin_LIBRARIES})
+
+# Prototype2020_jointmove
+add_executable(Prototype2020_jointsmove JointsMove.cpp)
+add_dependencies(Prototype2020_jointsmove  ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+target_link_libraries(Prototype2020_jointsmove ${catkin_LIBRARIES})
 
 # Prototype2020_bending_stretching
 add_executable(Prototype2020_bending_stretching bending_stretching.cpp)
@@ -18,13 +24,15 @@ add_executable(Prototype2020_bending_stretching_offset bending_stretching_offset
 add_dependencies(Prototype2020_bending_stretching_offset  ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 target_link_libraries(Prototype2020_bending_stretching_offset ${catkin_LIBRARIES})
 
+
+
+##  車輪移動系  ##
 # Prototype2020_wheelmove
 add_executable(Prototype2020_wheelmove WheelMove.cpp)
 add_dependencies(Prototype2020_wheelmove  ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 target_link_libraries(Prototype2020_wheelmove ${catkin_LIBRARIES})
 
-# Prototype2020_jointmove
-add_executable(Prototype2020_jointsmove JointsMove.cpp)
-add_dependencies(Prototype2020_jointsmove  ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
-target_link_libraries(Prototype2020_jointsmove ${catkin_LIBRARIES})
-
+# Prototype2020_wheelmove_teleop
+add_executable(Prototype2020_wheelmove_teleop WheelMove_teleop.cpp)
+add_dependencies(Prototype2020_wheelmove_teleop  ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+target_link_libraries(Prototype2020_wheelmove_teleop ${catkin_LIBRARIES})
