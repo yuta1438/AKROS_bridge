@@ -1,5 +1,7 @@
 # CAN_ID of the motor
+string name
 uint8 CAN_ID
+string model
 ---
 # Whether if configuration success
 bool success

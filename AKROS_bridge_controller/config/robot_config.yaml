@@ -1,0 +1,29 @@
+# joint_limit: 関節の可動範囲．記入しない場合は無限回転可能とみなす
+# offset: ロボット起動時（原点出し時）の位置と，実際のロボットのゼロ点位置との差（デジタル値）
+
+motor_list:
+  Hip:
+    can_id: 1
+    model: AK10-9
+    Kp: 150.0
+    Kd: 1.0
+    offset: -70.7  # [deg]
+    inverseDirection: true
+    joint_limit: [-90.0, 90.0] #[deg]
+
+  Knee:
+    can_id: 2
+    model: AK10-9
+    Kp: 100.0
+    Kd: 1.0
+    offset: 30.0  # [deg]
+    inverseDirection: true
+    joint_limit: [15.0, 135.0] #deg
+    
+  Wheel:
+    can_id: 3
+    model: AK80-6
+    Kp: 100.0
+    Kd: 3.0
+    offset: 0.0  # [deg]
+    inverseDirection: false

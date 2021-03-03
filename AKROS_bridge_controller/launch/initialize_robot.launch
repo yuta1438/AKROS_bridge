@@ -1,0 +1,4 @@
+<launch>
+	<rosparam command="load" file="$(find AKROS_bridge_controller)/config/robot_config.yaml"/>
+	<node name="converter" pkg="AKROS_bridge_converter" type="AKROS_bridge_converter" output="screen"/>
+</launch>

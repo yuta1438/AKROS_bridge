@@ -206,10 +206,11 @@ include_directories(
 ## Add folders to be run by python nosetests
 # catkin_add_nosetests(test)
 
-# add_executable(test_pub src/test_pub.cpp)
 add_executable(AKROS_bridge_converter src/main.cpp src/basic_op.cpp src/AKROS_bridge_converter.cpp)
+add_executable(check_value src/check_value.cpp src/basic_op.cpp)
 
 add_dependencies(AKROS_bridge_converter  ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+add_dependencies(check_value  ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 
-# target_link_libraries(test_pub ${catkin_LIBRARIES})
 target_link_libraries(AKROS_bridge_converter ${catkin_LIBRARIES})
+target_link_libraries(check_value ${catkin_LIBRARIES})
