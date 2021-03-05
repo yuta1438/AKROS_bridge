@@ -4,6 +4,13 @@ add_executable(Prototype2020_initialPose initialPose.cpp)
 add_dependencies(Prototype2020_initialPose  ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 target_link_libraries(Prototype2020_initialPose ${catkin_LIBRARIES})
 
+
+# Prototype2020_initialPose_new
+add_executable(Prototype2020_initialPose_new initialPose_new.cpp Prototype2020_BaseController.cpp)
+add_dependencies(Prototype2020_initialPose_new  ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+target_link_libraries(Prototype2020_initialPose_new ${catkin_LIBRARIES})
+
+
 # Prototype2020_jointmove
 add_executable(Prototype2020_jointsmove JointsMove.cpp)
 add_dependencies(Prototype2020_jointsmove  ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
