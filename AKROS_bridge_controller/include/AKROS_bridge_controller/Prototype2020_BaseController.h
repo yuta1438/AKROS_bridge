@@ -31,15 +31,20 @@ protected:  // このクラスと派生クラスからしか見れない
     cnoid::Interpolator<Eigen::VectorXd> joint_Interpolator;
     cnoid::Interpolator<Eigen::Vector2d> leg_Interpolator;
     
-    Eigen::Vector2d leg_pos;
-    Eigen::VectorXd qref, qref_old, q_init;
+    Eigen::Vector2d leg_pos;    // 脚先目標位置
+    Eigen::VectorXd qref;       // 
+    Eigen::VectorXd qref_old;
+    Eigen::VectorXd q_init; // 
 
     // Robot Parameters
     const double l1 = 0.20;  // 大腿脚長
     const double l2 = 0.20;  // 下腿脚長
     const double wheel_D = 0.1;  // 車輪直径
 
-    const double initialPose[3] = {15.0f, -30.0f, 0.0};
+    // 初期姿勢(initialPose)
+    const double initialPose_deg[3] = {15.0f, -30.0f, 0.0};
+    Eigen::VectorXd q_initialPose;
+
     bool initializeFlag = false;
     int phase = 0;
 
@@ -55,12 +60,12 @@ public:
     void timer_start(void);
     void read_State(void);
     double getTime(void);
+
     void stopController(void);
+    void sendCommand(void); // モータ指令トピックを送信
 
-    void sendCommand(void);
-
-    Eigen::Vector2d solve_sagittal_FK(Eigen::Vector2d q);
-    Eigen::Vector2d solve_sagittal_IK(Eigen::Vector2d p, bool &error);
+    bool solve_sagittal_FK(const Eigen::VectorXd&, Eigen::Vector2d&);
+    bool solve_sagittal_IK(const Eigen::Vector2d&, Eigen::VectorXd&);
 
     virtual void loop(const ros::TimerEvent& e) = 0;
     virtual ~Prototype2020_BaseController(){};

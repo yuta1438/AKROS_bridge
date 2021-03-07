@@ -4,9 +4,8 @@ add_executable(Prototype2020_initialPose initialPose.cpp)
 add_dependencies(Prototype2020_initialPose  ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 target_link_libraries(Prototype2020_initialPose ${catkin_LIBRARIES})
 
-
 # Prototype2020_initialPose_new
-add_executable(Prototype2020_initialPose_new initialPose_new.cpp Prototype2020_BaseController.cpp)
+add_executable(Prototype2020_initialPose_new new/initialPose_new.cpp Prototype2020_BaseController.cpp)
 add_dependencies(Prototype2020_initialPose_new  ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 target_link_libraries(Prototype2020_initialPose_new ${catkin_LIBRARIES})
 
@@ -16,10 +15,24 @@ add_executable(Prototype2020_jointsmove JointsMove.cpp)
 add_dependencies(Prototype2020_jointsmove  ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 target_link_libraries(Prototype2020_jointsmove ${catkin_LIBRARIES})
 
+# Prototype2020_jointmove_new
+add_executable(Prototype2020_jointsmove_new new/JointsMove_new.cpp Prototype2020_BaseController.cpp)
+add_dependencies(Prototype2020_jointsmove_new  ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+target_link_libraries(Prototype2020_jointsmove_new ${catkin_LIBRARIES})
+
+
+
 # Prototype2020_bending_stretching
 add_executable(Prototype2020_bending_stretching bending_stretching.cpp)
 add_dependencies(Prototype2020_bending_stretching  ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 target_link_libraries(Prototype2020_bending_stretching ${catkin_LIBRARIES})
+
+# Prototype2020_bending_stretching_new
+add_executable(Prototype2020_bending_stretching_new new/bending_stretching_new.cpp Prototype2020_BaseController.cpp)
+add_dependencies(Prototype2020_bending_stretching_new  ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+target_link_libraries(Prototype2020_bending_stretching_new ${catkin_LIBRARIES})
+
+
 
 # Prototype2020_legmove
 add_executable(Prototype2020_legmove LegMove.cpp)
@@ -38,6 +51,13 @@ target_link_libraries(Prototype2020_bending_stretching_offset ${catkin_LIBRARIES
 add_executable(Prototype2020_wheelmove WheelMove.cpp)
 add_dependencies(Prototype2020_wheelmove  ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 target_link_libraries(Prototype2020_wheelmove ${catkin_LIBRARIES})
+
+# Prototype2020_wheelmove_new
+add_executable(Prototype2020_wheelmove_new new/WheelMove_new.cpp Prototype2020_BaseController.cpp)
+add_dependencies(Prototype2020_wheelmove_new  ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+target_link_libraries(Prototype2020_wheelmove_new ${catkin_LIBRARIES})
+
+
 
 # Prototype2020_wheelmove_teleop
 add_executable(Prototype2020_wheelmove_teleop WheelMove_teleop.cpp)

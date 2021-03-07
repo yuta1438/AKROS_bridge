@@ -1,0 +1,107 @@
+// 単脚用プログラム
+// 矢状平面内での屈伸運動(Bending & Stretching)
+// 石沢から振幅を指定できるようにしたいとの要望あり
+// ただし，initialPoseを基準とする！
+
+#include <AKROS_bridge_controller/Prototype2020_BaseController.h>
+
+class Bending_Stretching_Controller : public Prototype2020_BaseController{
+private:
+    const double marginTime = 2.0;
+    const double settingTime = 3.0;
+    const double movingTime = 30.0;
+
+    const double wave_frequency = 1.0;       // 脚先正弦波指令の周波数[Hz]
+    const double amplitude = 0.1;           // 正弦波振幅[m]
+    const double omega = 2*M_PI*wave_frequency;
+
+    const double q_extention_deg[2] = {15.0f, -30.0f};   // 一番Kneeを伸ばすポーズ
+    const double q_flexion_deg[2] = {60.0f, -120.0f};    // 一番Kneeを曲げるポーズ
+
+    Eigen::Vector2d pref, p_offset;
+    Eigen::VectorXd q_extension;
+    Eigen::Vector2d p_extension;
+
+public:
+    Bending_Stretching_Controller(void){
+        q_extension.resize(JOINTNUM);
+
+        // 各種計算
+        q_extension << deg2rad(q_extention_deg[0]), deg2rad(q_extention_deg[1]), 0.0;
+        solve_sagittal_FK(q_extension.head<2>(), p_extension);
+        p_offset << p_extension[0], p_extension[1]+amplitude;   // 振動中心点
+    }
+
+    virtual void loop(const ros::TimerEvent& e) override {
+        double current_time = getTime();
+
+        if(phase == 0){
+            if(initializeFlag == false){
+                joint_Interpolator.clear();
+                joint_Interpolator.appendSample(current_time, q_init);
+                joint_Interpolator.appendSample(current_time+settingTime, q_extension);
+                joint_Interpolator.update();
+                initializeFlag = true;
+            }
+
+            qref = joint_Interpolator.interpolate(current_time);
+
+            if(current_time > joint_Interpolator.domainUpper()){
+                initializeFlag = false;
+                ROS_INFO("Enter key to start moving ...");
+                char buf;
+                std::cin >> buf;    // 待ち
+                timer_start();
+                phase = 1;
+            }
+        }
+
+        else if(phase == 1){
+            if(initializeFlag == false){
+                ROS_INFO("phase 2 : start flexion");
+                pref[0] = p_offset[0];
+                initializeFlag = true;
+            }
+            pref[1] = p_offset[1] - amplitude * cos(omega * (current_time));
+            
+            Eigen::VectorXd q_buf(2);
+            solve_sagittal_IK(pref, q_buf);    // solve_sagittal_IK(pref, qref.head<2>())だとエラー
+            qref.head<2>() = q_buf;
+            qref[WHEEL] = -(qref[HIP] - q_initialPose[HIP]);
+
+            if(current_time > movingTime){
+                initializeFlag = false;
+                phase = 3;
+            }
+        }
+
+        else if(phase == 3){
+            if(initializeFlag == false){
+                ROS_INFO("phase 3 : finish and move to initial pose");
+                joint_Interpolator.clear();
+                joint_Interpolator.appendSample(current_time, qref);
+                joint_Interpolator.appendSample(current_time + 3.0, q_extension);
+                joint_Interpolator.update();
+                initializeFlag = true;
+            }
+            
+            qref = joint_Interpolator.interpolate(current_time);
+            qref[WHEEL] = -qref[HIP];
+
+            if(current_time > joint_Interpolator.domainUpper()){
+                ROS_INFO("controller finished !");
+                stopController();
+            }
+        }
+        sendCommand();
+    }
+};
+
+
+
+int main(int argc, char** argv){
+    ros::init(argc, argv, "bending_stretching_Controller");
+    Prototype2020_BaseController *controller = new Bending_Stretching_Controller;
+    ros::spin();
+    return 0;
+}

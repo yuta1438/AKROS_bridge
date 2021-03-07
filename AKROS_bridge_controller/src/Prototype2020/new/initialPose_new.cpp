@@ -7,25 +7,19 @@
 class initialPose_Controller : public Prototype2020_BaseController{
 private:
     const double settingTime = 3.0;
-    Eigen::VectorXd q_target;
 public:
     initialPose_Controller(void){
-        ROS_INFO("initialPose_Controller_constructor");
-        q_target.resize(JOINTNUM);
-        for(int i=0; i<JOINTNUM; i++){
-            q_target[i] = deg2rad(initialPose[i]);
-        }
-    };
+        ROS_INFO("Transition to initialPose ...");
+    }
 
     virtual void loop(const ros::TimerEvent& e) override{
         double current_time = getTime();
 
         if(phase == 0){
             if(initializeFlag == false){
-                ROS_INFO("phase 0");
                 joint_Interpolator.clear();
                 joint_Interpolator.appendSample(current_time, q_init);
-                joint_Interpolator.appendSample(current_time+settingTime, q_target);
+                joint_Interpolator.appendSample(current_time+settingTime, q_initialPose);
                 joint_Interpolator.update();
                 initializeFlag = true;
             }
@@ -34,10 +28,9 @@ public:
             if(current_time > joint_Interpolator.domainUpper()){
                 initializeFlag = false;
                 phase = 1;
-                ros::shutdown();
+                stopController();
             }
         }
-
         sendCommand();
     }
 };
