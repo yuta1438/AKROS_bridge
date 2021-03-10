@@ -1,6 +1,5 @@
 // 単脚用プログラム
 // q = [15.0, -30.0]T[deg] (initialPose) にするコントローラ
-// 何かしらの動作をさせる前にこのコントローラでinitialPoseにすること！
 
 #include <AKROS_bridge_controller/Prototype2020_BaseController.h>
 

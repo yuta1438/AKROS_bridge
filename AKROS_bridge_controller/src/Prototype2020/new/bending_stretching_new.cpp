@@ -18,7 +18,7 @@ private:
     const double q_extention_deg[2] = {15.0f, -30.0f};   // 一番Kneeを伸ばすポーズ
     const double q_flexion_deg[2] = {60.0f, -120.0f};    // 一番Kneeを曲げるポーズ
 
-    Eigen::Vector2d pref, p_offset;
+    Eigen::Vector2d pref, p_center;
     Eigen::VectorXd q_extension;
     Eigen::Vector2d p_extension;
 
@@ -29,12 +29,13 @@ public:
         // 各種計算
         q_extension << deg2rad(q_extention_deg[0]), deg2rad(q_extention_deg[1]), 0.0;
         solve_sagittal_FK(q_extension.head<2>(), p_extension);
-        p_offset << p_extension[0], p_extension[1]+amplitude;   // 振動中心点
+        p_center << p_extension[0], p_extension[1]+amplitude;   // 振動中心点
     }
 
     virtual void loop(const ros::TimerEvent& e) override {
         double current_time = getTime();
 
+        // 
         if(phase == 0){
             if(initializeFlag == false){
                 joint_Interpolator.clear();
@@ -59,15 +60,16 @@ public:
         else if(phase == 1){
             if(initializeFlag == false){
                 ROS_INFO("phase 2 : start flexion");
-                pref[0] = p_offset[0];
+                pref[0] = p_center[0];
                 initializeFlag = true;
             }
-            pref[1] = p_offset[1] - amplitude * cos(omega * (current_time));
+            pref[1] = p_center[1] - amplitude * cos(omega * (current_time));
             
             Eigen::VectorXd q_buf(2);
             solve_sagittal_IK(pref, q_buf);    // solve_sagittal_IK(pref, qref.head<2>())だとエラー
             qref.head<2>() = q_buf;
-            qref[WHEEL] = -(qref[HIP] - q_initialPose[HIP]);
+
+            qref[WHEEL] = -(qref[HIP] - q_initialPose[HIP]);    // 車輪が地面に対して動かないように制御
 
             if(current_time > movingTime){
                 initializeFlag = false;
