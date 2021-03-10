@@ -318,7 +318,8 @@ bool AKROS_bridge_converter::servo_setting_Cb(AKROS_bridge_msgs::servo_setting::
             ROS_INFO("All servo OFF");
             // 指令値をすべて0に！
             for(auto& e : motor){
-                e.position_ref = CENTER_POSITION;
+                // OFF->ONにしたときに0に動いてしまう！
+                // e.position_ref = CENTER_POSITION;
                 e.velocity_ref = CENTER_VELOCITY;
                 e.effort_ref = CENTER_EFFORT;
             }
@@ -329,7 +330,8 @@ bool AKROS_bridge_converter::servo_setting_Cb(AKROS_bridge_msgs::servo_setting::
             ROS_INFO("Motor %d servo ON", req_.CAN_ID);
         }else{
             ROS_INFO("Motor %d servo OFF", req_.CAN_ID);
-            motor[find_index(req_.CAN_ID)].position_ref = CENTER_POSITION;
+            // OFF->ONにしたときに0に動いてしまう！
+            // motor[find_index(req_.CAN_ID)].position_ref = CENTER_POSITION;
             motor[find_index(req_.CAN_ID)].velocity_ref = CENTER_VELOCITY;
             motor[find_index(req_.CAN_ID)].effort_ref = CENTER_EFFORT;
         }
