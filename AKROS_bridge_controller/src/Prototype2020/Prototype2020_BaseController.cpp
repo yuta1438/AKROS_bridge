@@ -11,7 +11,7 @@ Prototype2020_BaseController::Prototype2020_BaseController(void){
     qref_old.resize(JOINTNUM);
     q_init.resize(JOINTNUM);
     q_initialPose.resize(JOINTNUM);
-    read_State();
+    read_State(q_init);
 
     q_initialPose << deg2rad(initialPose_deg[0]), deg2rad(initialPose_deg[1]), deg2rad(initialPose_deg[2]);
 
@@ -34,11 +34,13 @@ Prototype2020_BaseController::Prototype2020_BaseController(void){
 }
 
 
-// 現在の状態の読み取り
-void Prototype2020_BaseController::read_State(void){
+// ロボットの関節角度の読み取り
+// 引数には関節角を格納する変数を入れる
+// ロボットの関節数(=n)次元のベクトルを引数に与えること！最悪segment faultが発生する
+void Prototype2020_BaseController::read_State(Eigen::VectorXd& q_){
     if(currentState_client.call(currentState_srv)){
         for(int i=0; i<JOINTNUM; i++){
-            q_init[i] = currentState_srv.response.reply.motor[i].position;
+            q_[i] = currentState_srv.response.reply.motor[i].position;
         }
     }else{
         ROS_ERROR("Failed to get current state !");
@@ -53,13 +55,13 @@ void Prototype2020_BaseController::sendCommand(void){
         robot_cmd.motor[i].position = qref[i];
         robot_cmd.motor[i].velocity = (qref[i] - qref_old[i]) * controller_frequency;
     }
-    qref_old = qref;
-    pub.publish(robot_cmd);
+    qref_old = qref;    // qrefベクトルの更新
+    pub.publish(robot_cmd); // 指令値をpublish
 }
 
 
-// タイマ開始
-void Prototype2020_BaseController::timer_start(){
+// タイマ開始(t_startの更新)
+void Prototype2020_BaseController::timer_start(void){
     t_start = ros::Time::now();
 }
 
@@ -77,22 +79,27 @@ void Prototype2020_BaseController::stopController(void){
 }
 
 
+// 矢状面内での順運動学計算
+// 返り値には計算結果を返す
 bool Prototype2020_BaseController::solve_sagittal_FK(const Eigen::VectorXd& q, Eigen::Vector2d& p){
     p[0] = -l1*sin(q[0]) - l2*sin(q[0]+q[1]);
     p[1] = -l1*cos(q[0]) - l2*cos(q[0]+q[1]);
     return true;
 }
 
-
+// 矢状面内での順運動学計算
+// 返り値に計算結果を返す
 bool Prototype2020_BaseController::solve_sagittal_IK(const Eigen::Vector2d& p, Eigen::VectorXd& q){
     double L = p.norm();
 
-    if(L>(l1+l2)){
+    if(!RANGE_CHECK(L, Lmin, Lmax)){
         return false;
     }
 
+    // そもそもその目標位置に到達可能か？
+    // 「脚をこれ以上曲げられない」という判別も出来ないか？
     q[0] = -atan2(p[0], -p[1]) + acos((pow(L, 2) + pow(l1, 2) - pow(l2, 2)) / (2 * L * l1));
     q[1] = -M_PI + acos((pow(l1, 2.0) + pow(l2, 2.0) - pow(L, 2)) / (2 * l1 * l2));
 
-    return true;
+    return true;  // 脚長チェック
 }

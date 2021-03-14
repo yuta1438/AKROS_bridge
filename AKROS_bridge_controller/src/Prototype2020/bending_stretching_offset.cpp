@@ -1,195 +1,123 @@
 // 単脚用プログラム
 // 矢状平面内でx軸方向にオフセットをもたせた屈伸運動(Bending & Stretching)
 
-#include <iostream>
-#include <ros/ros.h>
-#include <AKROS_bridge_msgs/motor_cmd.h>
-#include <AKROS_bridge_controller/Prototype2020.h>  // ロボットに関するヘッダファイル
-#include <AKROS_bridge_controller/Interpolator.h>   // choreonoidの補間ライブラリ
-#include <AKROS_bridge_msgs/currentState.h>
-#include <std_msgs/Float32.h>
+#include <AKROS_bridge_controller/Prototype2020_BaseController.h>
+#include <geometry_msgs/Pose2D.h>
+class Bending_Stretching_offset_Controller : public Prototype2020_BaseController{
+private:
+    // 屈伸開始時の脚先位置
+    const double offset_x = 0.2;
+    const double offset_z = -0.3;
 
-#define JOINT_NUM   3
+    const double marginTime = 2.0;
+    const double settingTime = 3.0;
+    const double movingTime = 30.0;
 
-static const double control_frequency = 100.0;  // 制御周期[Hz]
+    const double wave_frequency = 0.5;          // 脚先正弦波指令の周波数[Hz]
+    const double wave_amplitude = 0.1;         // 正弦波振幅[m]
+    const double omega = 2*M_PI*wave_frequency; // 正弦波の角振動数[rad/s]
 
-// 屈伸開始時の脚先位置
-static const double offset_x = 0.2;
-static const double offset_z = -0.3;
+    Eigen::VectorXd q_initialize;
+    Eigen::Vector2d pref;
+    Eigen::Vector2d p_init;
+    Eigen::Vector2d p_center;   // 正弦波の中心点
+    Eigen::Vector2d p_top;      // 正弦波の最高点
+    Eigen::Vector2d p_bottom;   // 正弦波の最下点(= offset点)
 
-static const double marginTime = 2.0;
-static const double settingTime = 3.0;
-static const double movingTime = 30.0;
+    geometry_msgs::Pose2D leg_pos;
+    ros::Publisher leg_pos_pub;
 
-static const double wave_frequency = 0.5;       // 脚先正弦波指令の周波数[Hz]
-static const double amplitude = 0.05;           // 正弦波振幅[m]
-static const double omega = 2*M_PI*wave_frequency;
+public:
+    Bending_Stretching_offset_Controller(void){
+        // ROS_INFO("Child Controller Constructor");
+        q_initialize.resize(LEG_JOINTNUM);
+        p_bottom << offset_x, offset_z;   // 振動中心点
 
-Eigen::Vector2d pref, p_offset, p_init;
-Eigen::VectorXd qref, qref_old;
+        leg_pos_pub = nh.advertise<geometry_msgs::Pose2D>("leg_pos", 1);
 
-ros::Publisher cmd_pub;
-AKROS_bridge_msgs::motor_cmd cmd;
+        // 振動してる際に脚先可動範囲を超えないかどうかチェック
+        // もし超えたらロボットを動かさずにコントローラを終了
+        Eigen::VectorXd q_temp;
+        q_temp.resize(JOINTNUM);
 
-ros::Publisher z_pub;
-std_msgs::Float32 z;
-
-ros::ServiceClient currentState_client;
-AKROS_bridge_msgs::currentState currentState_srv;
-
-
-int motor_num;
-bool initializeFlag = false;
-
-cnoid::Interpolator<Eigen::Vector2d> joint_trajectory; // 関節空間での補間器
-
-
-int main(int argc, char** argv){
-    ros::init(argc, argv, "flexion_controller");
-    ros::NodeHandle nh;
-    ros::Rate loop_rate(control_frequency);
-
-    cmd_pub = nh.advertise<AKROS_bridge_msgs::motor_cmd>("motor_cmd", 1);
-    z_pub = nh.advertise<std_msgs::Float32>("z_value", 1);  // for debug
-    currentState_client = nh.serviceClient<AKROS_bridge_msgs::currentState>("current_state");
-
-    // rosparamからCAN_ID，Kp, Kdを読み込む
-    XmlRpc::XmlRpcValue rosparams;
-    nh.getParam("motor_list", rosparams);
-    motor_num = rosparams.size();
-
-    // モータ個数が違う場合は中止
-    if(motor_num != JOINT_NUM){
-        ROS_ERROR("the number of motor is not the same as controller");
-        ROS_BREAK();
-    }
-
-    cmd.motor.resize(motor_num);
-    qref.resize(motor_num);
-    qref_old.resize(motor_num);
-    int phase = 0;
-    int counter = 0;
-
-    // 初期状態を取得
-    Eigen::VectorXd q_init(motor_num);
-    q_init = Eigen::VectorXd::Zero(motor_num);
-    if(currentState_client.call(currentState_srv)){
-        for(int i=0; i<3; i++){
-            q_init[i] = currentState_srv.response.reply.motor[i].position;
-            // std::cout << "q_init[" << i << "] : " << q_init[i] << std::endl; // debug
+        p_center = p_bottom;
+        p_top = p_bottom;
+        p_center[1] += wave_amplitude;
+        p_top[1] = p_center[1] + wave_amplitude;
+        if(!solve_sagittal_IK(p_top, q_temp) || !solve_sagittal_IK(p_bottom, q_temp)){
+            ROS_ERROR("I cannot reach this trajectory !");
+            stopController();
         }
-    }else{
-        ROS_ERROR("Failed to get current state !");
+
+        qref = q_init;
     }
 
-    // 各種計算
-    p_offset << offset_x, offset_z;   // 振動中心点
-    Eigen::Vector2d q_initialize(2);
-    bool isIKsucceeded;
-    q_initialize = solve_sagittal_IK(p_offset, isIKsucceeded);
-    ROS_ASSERT(!isIKsucceeded);
-    if(isIKsucceeded)   ROS_ERROR("IK out of range");
 
-    
+    virtual void loop(const ros::TimerEvent& e) override {
+        double current_time = getTime();
 
-    for(auto param_itr=rosparams.begin(); param_itr!=rosparams.end(); ++param_itr){
-        cmd.motor[counter].CAN_ID = static_cast<int>(param_itr->second["can_id"]);
-        cmd.motor[counter].Kp     = static_cast<double>(param_itr->second["Kp"]);
-        cmd.motor[counter].Kd     = static_cast<double>(param_itr->second["Kd"]);
-        cmd.motor[counter].effort = 0.0;
-        counter++;
-    }
-
-    ROS_INFO("flexion controller start !");
-    ros::Time t_start = ros::Time::now();
-
-    while(ros::ok()){
-        double current_time = (ros::Time::now() - t_start).toSec() - marginTime; // 現在時刻
-
-        // 待機
+        // 基準の姿勢に
         if(phase == 0){
-            qref = q_init;  // 
-            if(current_time > 0.0){
+            if(initializeFlag == false){
+                // ROS_INFO("phase 0");
+                solve_sagittal_IK(p_bottom, q_initialize);
+                joint_Interpolator.clear();
+                joint_Interpolator.appendSample(current_time, q_init.head<LEG_JOINTNUM>());
+                joint_Interpolator.appendSample(current_time+settingTime, q_initialize);
+                joint_Interpolator.update();
+                initializeFlag = true;
+            }
+            
+            qref.head<LEG_JOINTNUM>() = joint_Interpolator.interpolate(current_time);
+            qref[WHEEL] = q_init[WHEEL];
+
+            if(current_time > joint_Interpolator.domainUpper()){
                 initializeFlag = false;
+                ROS_INFO("Enter key to start moving ...");
+                char buf;
+                std::cin >> buf;    // 待ち
+                timer_start();
                 phase = 1;
             }
         }
 
-        // 初期位置からスタート地点へ移動
+        // 屈伸運動
         else if(phase == 1){
-            if(initializeFlag == false){
-                ROS_INFO("phase 1");
-                joint_trajectory.clear();
-                joint_trajectory.appendSample(current_time, q_init.head<2>());
-                joint_trajectory.appendSample(current_time+settingTime, q_initialize);
-                joint_trajectory.update();
-                initializeFlag = true;
-            }
-
-            qref = joint_trajectory.interpolate(current_time);
-
-            if(current_time > joint_trajectory.domainUpper()){
-                initializeFlag = false;
-                phase = 2;
-                break;
-            }
-        }
-
-        for(int i=0; i<2; i++){
-            cmd.motor[i].position = qref[i];
-            cmd.motor[i].velocity = (qref[i] - qref_old[i]) * control_frequency;
-            qref_old[i] = qref[i];
-        }
-        cmd_pub.publish(cmd);
-        Eigen::Vector2d p_buff = solve_sagittal_FK(qref.head<2>());
-        
-        z.data = p_buff[1];
-        z_pub.publish(z);
-        ros::spinOnce();
-        loop_rate.sleep();
-    }
-
-    // キー入力待ち
-    ROS_INFO("Enter 's' to start Bending & Stretching ...");
-    char buf;
-    std::cin >> buf;
-
-    t_start = ros::Time::now(); // リスタート
-    while(ros::ok()){
-        double current_time = (ros::Time::now() - t_start).toSec(); // 現在時刻
-        // 屈伸
-        if(phase == 2){
             if(initializeFlag == false){    // 各phaseの最初の一回だけ実行
                 ROS_INFO("phase 2 : start flexion");
-                pref[0] = p_offset[0];
+                pref[0] = p_bottom[0];
                 initializeFlag = true;
+                q_init = qref;
             }
-            pref[1] = (p_offset[1] + amplitude) - amplitude * cos(omega * (current_time));
-            z.data = pref[1];
-            qref.head<2>() = solve_sagittal_IK(pref);
+            pref[1] = p_center[1] - wave_amplitude * cos(omega * (current_time));
+            
+            Eigen::VectorXd q_buff;
+            q_buff.resize(LEG_JOINTNUM);
+            solve_sagittal_IK(pref, q_buff);
+            qref.head<2>() = q_buff;
+            qref[WHEEL] = q_init[WHEEL] - (qref[HIP] - q_init[HIP]);
+
+            Eigen::Vector2d p_buff;
+            solve_sagittal_FK(qref.head<LEG_JOINTNUM>(), p_buff);
+            leg_pos.x = p_buff[0];
+            leg_pos.y = p_buff[1];
+
+            leg_pos_pub.publish(leg_pos);
 
             if(current_time > movingTime){
                 initializeFlag = false;
                 ROS_INFO("controller finished !");
-                break;
+                stopController();
             }
         }
-
-
-        for(int i=0; i<2; i++){
-            cmd.motor[i].position = qref[i];
-            cmd.motor[i].velocity = (qref[i] - qref_old[i]) * control_frequency;
-            qref_old[i] = qref[i];
-        }
-        cmd.motor[2].position = -cmd.motor[0].position; // 符号に気をつける
-
-        cmd_pub.publish(cmd);
-
-        Eigen::Vector2d p_buff = solve_sagittal_FK(qref.head<2>());
-        z.data = p_buff[1];
-        z_pub.publish(z);
-        ros::spinOnce();
-        loop_rate.sleep();
+        sendCommand();
     }
+};
+
+
+int main(int argc, char** argv){
+    ros::init(argc, argv, "bending_stretching_offset_Controller");
+    Prototype2020_BaseController *controller = new Bending_Stretching_offset_Controller;
+    ros::spin();
     return 0;
 }

@@ -3,7 +3,7 @@
 
 #include <AKROS_bridge_converter/AKROS_bridge_converter.h>
 
-// ここで初期化を全て行うべき！
+// コンストラクタ
 AKROS_bridge_converter::AKROS_bridge_converter(ros::NodeHandle* nh_) : spinner(0){
     // Topic初期設定
     usleep(1000*1000);  // wait for rosserial connection established
@@ -20,7 +20,7 @@ AKROS_bridge_converter::AKROS_bridge_converter(ros::NodeHandle* nh_) : spinner(0
     tweak_control_server = nh->advertiseService("tweak_control", &AKROS_bridge_converter::tweak_control_Cb, this);
     currentState         = nh->advertiseService("current_state", &AKROS_bridge_converter::currentState_Cb, this);
 
-    // Client初期設定
+    // Client初期設定（マイコンに対してcall）
     motor_config_client = nh->serviceClient<AKROS_bridge_msgs::motor_config>("motor_config");
     
     // 有効なモータの型番は以下の通り(std::mapを使用して有効かどうか確認する) ----
@@ -75,16 +75,7 @@ AKROS_bridge_converter::AKROS_bridge_converter(ros::NodeHandle* nh_) : spinner(0
         }
 
         // 関節可動角を設定
-        // どうやったらjointLimit: []の中身を取り出せるか？
         if(params_iterator->second["joint_limit"].valid()){
-            // これで取れるっちゃ取れる...
-            /*
-            std::vector<double> limit;
-            nh.getParam("/motor_list/Hip/joint_limit", limit);
-            for(auto& e : limit){
-                std::cout << e << std::endl;
-            }*/
-
             // iterator経由で取得する方法が分からなかったのでNodeHandle経由で取得するようにする．
             std::vector<double> limit;
             std::string string1 = "/motor_list/";
@@ -94,10 +85,6 @@ AKROS_bridge_converter::AKROS_bridge_converter(ros::NodeHandle* nh_) : spinner(0
             m.lower_limit = deg2rad(limit[0]);
             m.upper_limit = deg2rad(limit[1]);
             m.isLimitExist = true;
-            
-            // debug
-            // std::cout << rad2deg(m.lower_limit) << std::endl;
-            // std::cout << rad2deg(m.upper_limit) << std::endl;
         }
 
         // オフセット値の計算
@@ -176,12 +163,13 @@ AKROS_bridge_converter::AKROS_bridge_converter(ros::NodeHandle* nh_) : spinner(0
 }
 
 
+// デストラクタ
 AKROS_bridge_converter::~AKROS_bridge_converter(void){
     spinner.stop();
 }
 
 
-// motor_statusからcan_cmdに格納
+// motor_statusの内容をcan_cmdに格納
 // 一つのモータに対する関数
 void AKROS_bridge_converter::pack_cmd(AKROS_bridge_msgs::motor_can_cmd_single &can_cmd_, uint8_t index_){
     std::lock_guard<std::mutex> lock(motor_mutex);
@@ -202,7 +190,7 @@ void AKROS_bridge_converter::pack_cmd(AKROS_bridge_msgs::motor_can_cmd_single &c
 }
 
 
-// motor_statusをfloat型に変換してmotor_replyに格納
+// motor_statusの内容をfloat型に変換してmotor_replyに格納
 void AKROS_bridge_converter::pack_reply(AKROS_bridge_msgs::motor_reply_single &reply_, uint8_t index_){
     std::lock_guard<std::mutex> lock(motor_mutex);
     reply_.CAN_ID   = motor[index_].CAN_ID;
@@ -266,15 +254,11 @@ void AKROS_bridge_converter::can_reply_Cb(const AKROS_bridge_msgs::motor_can_rep
 
 // 操作終了
 // これを行うともう一度原点だしが必要になるので注意
-// To deprecated
 bool AKROS_bridge_converter::exit_CM_Cb(AKROS_bridge_msgs::exit_control_mode::Request& req_, AKROS_bridge_msgs::exit_control_mode::Response& res_){
     AKROS_bridge_msgs::motor_config motor_config_srv;
     motor_config_srv.request.CAN_ID = req_.CAN_ID;
     motor_config_srv.request.configration_mode = EXIT_CONTROL_MODE;
 
-    // 指定したvector要素のみを削除したい
-    // motor.erase(motor.begin() + (unsigned int)find_index[req_.CAN_ID]);    // vectorを削除
-    
     if(motor_config_client.call(motor_config_srv)){
         if(motor_config_srv.response.success)
             res_.success = true;
@@ -283,7 +267,6 @@ bool AKROS_bridge_converter::exit_CM_Cb(AKROS_bridge_msgs::exit_control_mode::Re
 
 
 // モータの原点と関節の原点との誤差値を設定
-// initialize部でしか使用できないようにする！ To deprecate!
 bool AKROS_bridge_converter::set_ZP_Cb(AKROS_bridge_msgs::set_position_zero::Request& req_, AKROS_bridge_msgs::set_position_zero::Response& res_){
     // error = joint - motor
     if(req_.CAN_ID == 0){   // 0なら全てのモータに対して
