@@ -47,7 +47,7 @@ enum models{
 #define KP_MAX   500.0f
 #define KD_MIN   0.0f
 #define KD_MAX   5.0f
-#define T_MIN   -18.0f
+#define T_MIN   -18.0f  // 40.0ではないかという疑問もあったが、18.0Nmで正解
 #define T_MAX   18.0f
 
 // number of bits
