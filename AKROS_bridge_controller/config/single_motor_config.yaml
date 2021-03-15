@@ -1,6 +1,6 @@
 motor_list:
   Motor:
-    can_id: 3
-    model: AK80-6
-    Kp: 20.0  # default value
-    Kd: 1.0
+    can_id: 1
+    model: AK10-9
+    Kp: 100.0  # default value
+    Kd: 0.0
