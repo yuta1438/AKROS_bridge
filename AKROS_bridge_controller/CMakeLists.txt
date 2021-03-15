@@ -206,9 +206,13 @@ include_directories(
 # catkin_add_nosetests(test)
 
 add_subdirectory(src/Prototype2020)
-add_subdirectory(src/test_controller_node)
 
-
+# check_rosparam
 add_executable(check_rosparam src/check_rosparam.cpp)
 add_dependencies(check_rosparam  ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 target_link_libraries(check_rosparam ${catkin_LIBRARIES})
+
+# single_motor_controller
+add_executable(single_motor_controller src/single_motor_controller.cpp)
+add_dependencies(single_motor_controller  ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+target_link_libraries(single_motor_controller ${catkin_LIBRARIES})
