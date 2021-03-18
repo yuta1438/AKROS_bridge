@@ -48,29 +48,37 @@ AKROS_bridge_converter::AKROS_bridge_converter(ros::NodeHandle* nh_) : spinner(0
         if(valid_motor_models.find(m.model) == valid_motor_models.end()){
             ROS_ERROR("Invalid motor has been detected at %s", m.name.c_str());
         }else{
-            if(m.model == "AK10-9"){
-                m.P_MAX = AK10_9_P_MAX;
-                m.P_MIN = AK10_9_P_MIN;
-                m.V_MAX = AK10_9_V_MAX;
-                m.V_MIN = AK10_9_V_MIN;
+            if(m.model == AK10_9::model_name){
+                m.P_MAX = AK10_9::P_MAX;
+                m.P_MIN = AK10_9::P_MIN;
+                m.V_MAX = AK10_9::V_MAX;
+                m.V_MIN = AK10_9::V_MIN;
+                m.T_MAX = AK10_9::T_MAX;
+                m.T_MIN = AK10_9::T_MIN;
             }
-            else if(m.model == "AK80-6"){
-                m.P_MAX = AK80_6_P_MAX;
-                m.P_MIN = AK80_6_P_MIN;
-                m.V_MAX = AK80_6_V_MAX;
-                m.V_MIN = AK80_6_V_MIN;
+            else if(m.model == AK80_6::model_name){
+                m.P_MAX = AK80_6::P_MAX;
+                m.P_MIN = AK80_6::P_MIN;
+                m.V_MAX = AK80_6::V_MAX;
+                m.V_MIN = AK80_6::V_MIN;
+                m.T_MAX = AK80_6::T_MAX;
+                m.T_MIN = AK80_6::T_MIN;
             }
-            else if(m.model == "AK10-9_OLD"){
-                m.P_MAX = AK10_9_OLD_P_MAX;
-                m.P_MIN = AK10_9_OLD_P_MIN;
-                m.V_MAX = AK10_9_OLD_V_MAX;
-                m.V_MIN = AK10_9_OLD_V_MIN;
+            else if(m.model == AK10_9_OLD::model_name){
+                m.P_MAX = AK10_9_OLD::P_MAX;
+                m.P_MIN = AK10_9_OLD::P_MIN;
+                m.V_MAX = AK10_9_OLD::V_MAX;
+                m.V_MIN = AK10_9_OLD::V_MIN;
+                m.T_MAX = AK10_9_OLD::T_MAX;
+                m.T_MIN = AK10_9_OLD::T_MIN;
             }
-            else if(m.model == "AK80-6_OLD"){
-                m.P_MAX = AK80_6_OLD_P_MAX;
-                m.P_MIN = AK80_6_OLD_P_MIN;
-                m.V_MAX = AK80_6_OLD_V_MAX;
-                m.V_MIN = AK80_6_OLD_V_MIN;
+            else if(m.model == AK80_6_OLD::model_name){
+                m.P_MAX = AK80_6_OLD::P_MAX;
+                m.P_MIN = AK80_6_OLD::P_MIN;
+                m.V_MAX = AK80_6_OLD::V_MAX;
+                m.V_MIN = AK80_6_OLD::V_MIN;
+                m.T_MAX = AK80_6_OLD::T_MAX;
+                m.T_MIN = AK80_6_OLD::T_MIN;
             }
         }
 
@@ -171,7 +179,7 @@ AKROS_bridge_converter::~AKROS_bridge_converter(void){
 
 // motor_statusの内容をcan_cmdに格納
 // 一つのモータに対する関数
-void AKROS_bridge_converter::pack_cmd(AKROS_bridge_msgs::motor_can_cmd_single &can_cmd_, uint8_t index_){
+void AKROS_bridge_converter::pack_can_cmd(AKROS_bridge_msgs::motor_can_cmd_single &can_cmd_, uint8_t index_){
     std::lock_guard<std::mutex> lock(motor_mutex);
     
     can_cmd_.CAN_ID   = motor[index_].CAN_ID;
@@ -196,7 +204,12 @@ void AKROS_bridge_converter::pack_reply(AKROS_bridge_msgs::motor_reply_single &r
     reply_.CAN_ID   = motor[index_].CAN_ID;
     reply_.position = signChange(uint_to_float(motor[index_].position + (motor[index_].offset+motor[index_].error), motor[index_].P_MIN, motor[index_].P_MAX, POSITION_BIT_NUM), motor[index_].inverseDirection);
     reply_.velocity = signChange(uint_to_float(motor[index_].velocity, motor[index_].V_MIN, motor[index_].V_MAX, VELOCITY_BIT_NUM), motor[index_].inverseDirection);
-    reply_.effort   = signChange(uint_to_float(motor[index_].effort,   T_MIN, T_MAX, EFFORT_BIT_NUM), motor[index_].inverseDirection);
+    reply_.effort   = signChange(uint_to_float(motor[index_].effort,   motor[index_].T_MIN, motor[index_].T_MAX, EFFORT_BIT_NUM), motor[index_].inverseDirection);
+
+    // オーバーフローを考慮する
+    reply_.position += motor[index_].P_MAX * motor[index_].position_overflow_conut;
+    reply_.velocity += motor[index_].V_MAX * motor[index_].velocity_overflow_conut;
+    reply_.effort   += motor[index_].T_MAX * motor[index_].effort_overflow_conut;
 }
 
 
@@ -216,7 +229,7 @@ void AKROS_bridge_converter::unpack_cmd(const AKROS_bridge_msgs::motor_cmd_singl
     }
     
     motor[index_].velocity_ref = float_to_uint(fminf(fmaxf(motor[index_].V_MIN, signChange(cmd_.velocity, motor[index_].inverseDirection)), motor[index_].V_MAX), motor[index_].V_MIN, motor[index_].V_MAX, VELOCITY_BIT_NUM);
-    motor[index_].effort_ref   = float_to_uint(fminf(fmaxf(T_MIN, signChange(cmd_.effort, motor[index_].inverseDirection)), T_MAX), T_MIN, T_MAX, EFFORT_BIT_NUM);
+    motor[index_].effort_ref   = float_to_uint(fminf(fmaxf(motor[index_].T_MIN, signChange(cmd_.effort, motor[index_].inverseDirection)), motor[index_].T_MAX), motor[index_].T_MIN, motor[index_].T_MAX, EFFORT_BIT_NUM);
     motor[index_].Kp           = float_to_uint(fminf(fmaxf(KP_MIN, cmd_.Kp), KP_MAX), KP_MIN, KP_MAX, KP_BIT_NUM);
     motor[index_].Kd           = float_to_uint(fminf(fmaxf(KD_MIN, cmd_.Kd), KD_MAX), KD_MIN, KD_MAX, KD_BIT_NUM);
 }
@@ -226,7 +239,14 @@ void AKROS_bridge_converter::unpack_cmd(const AKROS_bridge_msgs::motor_cmd_singl
 void AKROS_bridge_converter::unpack_can_reply(const AKROS_bridge_msgs::motor_can_reply_single& can_reply_){
     std::lock_guard<std::mutex> lock(motor_mutex);
     uint8_t index_ = find_index(can_reply_.CAN_ID);
-    motor[index_].CAN_ID   = can_reply_.CAN_ID;
+    motor[index_].CAN_ID   = can_reply_.CAN_ID;     // 無駄かもしれないが...
+
+    // 現在のデータを古いデータに変更
+    motor[index_].position_old = motor[index_].position;
+    motor[index_].velocity_old = motor[index_].velocity;
+    motor[index_].effort_old   = motor[index_].effort;
+
+    // 最新のデータをmotor_statusに格納
     motor[index_].position = can_reply_.position;
     motor[index_].velocity = can_reply_.velocity;
     motor[index_].effort   = can_reply_.effort;
@@ -238,11 +258,12 @@ void AKROS_bridge_converter::motor_cmd_Cb(const AKROS_bridge_msgs::motor_cmd::Co
     for(uint8_t i=0; i<cmd_->motor.size();i++){
         unpack_cmd(cmd_->motor[i]);
     }
-    publish_cmd();
+    publish_can_cmd();
 }
 
 
 // /can_replyを受け取って実数値に変換し，motor_statusに格納
+// 値がオーバーフローしていないかを確認
 void AKROS_bridge_converter::can_reply_Cb(const AKROS_bridge_msgs::motor_can_reply::ConstPtr& can_reply_){
     for(uint8_t i=0; i<can_reply_->motor.size(); i++){
         unpack_can_reply(can_reply_->motor[i]);
@@ -334,7 +355,7 @@ bool AKROS_bridge_converter::currentState_Cb(AKROS_bridge_msgs::currentState::Re
         res_.reply.motor[index_].CAN_ID   = motor[index_].CAN_ID;
         res_.reply.motor[index_].position = signChange(uint_to_float(motor[index_].position + (motor[index_].offset+motor[index_].error), motor[index_].P_MIN, motor[index_].P_MAX, POSITION_BIT_NUM), motor[index_].inverseDirection);
         res_.reply.motor[index_].velocity = uint_to_float(motor[index_].velocity, motor[index_].V_MIN, motor[index_].V_MAX, VELOCITY_BIT_NUM);
-        res_.reply.motor[index_].effort   = uint_to_float(motor[index_].effort,   T_MIN, T_MAX, EFFORT_BIT_NUM);
+        res_.reply.motor[index_].effort   = uint_to_float(motor[index_].effort,   motor[index_].T_MIN, motor[index_].T_MAX, EFFORT_BIT_NUM);
     }
     res_.success = true;
     return true;
@@ -388,10 +409,10 @@ switch (req_.control){
 
 
 // CAN指令値をmotor_statusから引っ張り出して変換し，publish 
-void AKROS_bridge_converter::publish_cmd(void){
+void AKROS_bridge_converter::publish_can_cmd(void){
     if(initializeFlag){
         for(uint8_t i=0; i<motor.size(); i++){
-            pack_cmd(can_cmd.motor[i], i);
+            pack_can_cmd(can_cmd.motor[i], i);
         }
         can_pub.publish(can_cmd);
     }

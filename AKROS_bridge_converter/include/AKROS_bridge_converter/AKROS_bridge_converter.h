@@ -1,10 +1,5 @@
-// 
 #ifndef AKROS_BRIDGE_CONVERTER_H_
 #define AKROS_BRIDGE_CONVERTER_H_
-
-// 原点だしの位置と実際の零位置との差
-#define HIP_OFFSET  3233    // = 70.7[deg]
-#define KNEE_OFFSET 1372    // = 30.0[deg]
 
 #include <ros/ros.h>
 #include <vector>
@@ -30,24 +25,9 @@
 #include <AKROS_bridge_msgs/motor_config.h>
 #include <AKROS_bridge_msgs/tweak.h>
 #include <AKROS_bridge_msgs/currentState.h>
+#include <AKROS_bridge_converter/tweak_control.h>
+#include <AKROS_bridge_converter/motor_config.h>
 
-// Settings
-#define ENTER_CONTROL_MODE      1
-#define EXIT_CONTROL_MODE       2
-#define SET_POSITION_TO_ZERO    3
-#define INITIALIZE_LOCK         4
-#define SERVO                   5
-
-// Tweak control mode
-#define TWEAK_UP    0
-#define TWEAK_DOWN  1
-#define UP          2
-#define DOWN        3
-#define BIG_UP      4
-#define BIG_DOWN    5
-static const uint8_t tweak_delta = 1;
-static const uint8_t delta = 10;
-static const uint8_t big_delta = 100;
 
 #define ERROR_NUM   99
 
@@ -77,7 +57,7 @@ private:
     ros::Subscriber cmd_sub;    // ROSから実数指令値を受け取る
 
     // for convertion
-    void pack_cmd(AKROS_bridge_msgs::motor_can_cmd_single&, uint8_t);    // convert// 一つのモータに対する関数 to CAN message
+    void pack_can_cmd(AKROS_bridge_msgs::motor_can_cmd_single&, uint8_t);    // convert 「一つのモータに対する関数」 to CAN message
     void pack_reply(AKROS_bridge_msgs::motor_reply_single&, uint8_t);    // convert to ROS message
     void unpack_cmd(const AKROS_bridge_msgs::motor_cmd_single&);
     void unpack_can_reply(const AKROS_bridge_msgs::motor_can_reply_single&);
@@ -109,7 +89,7 @@ private:
 public:
     AKROS_bridge_converter(ros::NodeHandle*);
     ~AKROS_bridge_converter();
-    void publish_cmd(void);
+    void publish_can_cmd(void);
     void publish_reply(void);
 };
 #endif
