@@ -207,9 +207,10 @@ void AKROS_bridge_converter::pack_reply(AKROS_bridge_msgs::motor_reply_single &r
     reply_.effort   = signChange(uint_to_float(motor[index_].effort,   motor[index_].T_MIN, motor[index_].T_MAX, EFFORT_BIT_NUM), motor[index_].inverseDirection);
 
     // オーバーフローを考慮する
-    reply_.position += motor[index_].P_MAX * signChange(motor[index_].position_overflow_count, motor[index_].inverseDirection);
-    reply_.velocity += motor[index_].V_MAX * signChange(motor[index_].velocity_overflow_count, motor[index_].inverseDirection);
-    reply_.effort   += motor[index_].T_MAX * signChange(motor[index_].effort_overflow_count, motor[index_].inverseDirection);
+    // 現在うまく行っていないので保留
+    // reply_.position += motor[index_].P_MAX * signChange(motor[index_].position_overflow_count, motor[index_].inverseDirection);
+    // reply_.velocity += motor[index_].V_MAX * signChange(motor[index_].velocity_overflow_count, motor[index_].inverseDirection);
+    // reply_.effort   += motor[index_].T_MAX * signChange(motor[index_].effort_overflow_count, motor[index_].inverseDirection);
 }
 
 
@@ -241,9 +242,9 @@ void AKROS_bridge_converter::unpack_can_reply(const AKROS_bridge_msgs::motor_can
     uint8_t index_ = find_index(can_reply_.CAN_ID);
     motor[index_].CAN_ID   = can_reply_.CAN_ID;     // 無駄かもしれないが...
     // 現在のデータを古いデータに変更
-    m.position_old = m.position;
-    m.velocity_old = m.velocity;
-    m.effort_old   = m.effort;
+    motor[index_].position_old = motor[index_].position;
+    motor[index_].velocity_old = motor[index_].velocity;
+    motor[index_].effort_old   = motor[index_].effort;
     // 最新のデータをmotor_statusに格納
     motor[index_].position = can_reply_.position;
     motor[index_].velocity = can_reply_.velocity;
