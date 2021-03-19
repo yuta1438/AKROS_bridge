@@ -240,12 +240,10 @@ void AKROS_bridge_converter::unpack_can_reply(const AKROS_bridge_msgs::motor_can
     std::lock_guard<std::mutex> lock(motor_mutex);
     uint8_t index_ = find_index(can_reply_.CAN_ID);
     motor[index_].CAN_ID   = can_reply_.CAN_ID;     // 無駄かもしれないが...
-
     // 現在のデータを古いデータに変更
-    motor[index_].position_old = motor[index_].position;
-    motor[index_].velocity_old = motor[index_].velocity;
-    motor[index_].effort_old   = motor[index_].effort;
-
+    m.position_old = m.position;
+    m.velocity_old = m.velocity;
+    m.effort_old   = m.effort;
     // 最新のデータをmotor_statusに格納
     motor[index_].position = can_reply_.position;
     motor[index_].velocity = can_reply_.velocity;
@@ -450,11 +448,14 @@ void AKROS_bridge_converter::overflow_check(motor_status& m){
     // Position
     // 上限を突破したか？
     if((m.position_old > (CENTER_POSITION + (1 << (POSITION_BIT_NUM - 2)))) || (m.position < (CENTER_POSITION - (1 << (POSITION_BIT_NUM - 2))))){
+        // 超えるとどんどんインクリメントしてしまう！
         m.position_overflow_count++;
+        std::cout << m.position_overflow_count << std::endl;
     }
     // 下限を突破したか？
     else if((m.position_old < (CENTER_POSITION - (1 << (POSITION_BIT_NUM-2)))) || (m.position > (CENTER_POSITION + (1 << (POSITION_BIT_NUM-2))))){
         m.position_overflow_count--;
+        std::cout << m.position_overflow_count << std::endl;
     }
 
     // Velocity
