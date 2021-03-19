@@ -1,5 +1,5 @@
 // 単体モータの位置制御（P制御）
-
+// その場で固まる指令
 #include <ros/ros.h>
 #include <AKROS_bridge_msgs/currentState.h>
 #include <AKROS_bridge_msgs/motor_cmd.h>

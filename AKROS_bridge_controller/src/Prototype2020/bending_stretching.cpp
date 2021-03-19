@@ -4,14 +4,15 @@
 // ただし，initialPoseを基準とする！
 
 #include <AKROS_bridge_controller/Prototype2020_BaseController.h>
+#include <geometry_msgs/Point32.h>
 
 class Bending_Stretching_Controller : public Prototype2020_BaseController{
 private:
     const double marginTime = 2.0;
     const double settingTime = 3.0;
-    const double movingTime = 30.0;
+    const double movingTime = 15.0;
 
-    const double wave_frequency = 0.5;       // 脚先正弦波指令の周波数[Hz]
+    const double wave_frequency = 1.0;       // 脚先正弦波指令の周波数[Hz]
     const double amplitude = 0.1;           // 正弦波振幅[m]
     const double omega = 2*M_PI*wave_frequency;
 
@@ -22,12 +23,16 @@ private:
     Eigen::VectorXd q_extension;
     Eigen::Vector2d p_extension;
 
+    geometry_msgs::Point32 foot_position;
+    ros::Publisher foot_position_pub;
+
 public:
     // コンストラクタ
     // 
     Bending_Stretching_Controller(void){
-        q_extension.resize(JOINTNUM);
+        foot_position_pub = nh.advertise<geometry_msgs::Point32>("Target_foot_position", 1);
 
+        q_extension.resize(JOINTNUM);
         // 各種計算
         q_extension << deg2rad(q_extention_deg[0]), deg2rad(q_extention_deg[1]), 0.0;
         solve_sagittal_FK(q_extension.head<2>(), p_extension);
@@ -40,6 +45,7 @@ public:
         // 
         if(phase == 0){
             if(initializeFlag == false){
+                ROS_INFO("preparing to bending & stretching ...");
                 joint_Interpolator.clear();
                 joint_Interpolator.appendSample(current_time, q_init);
                 joint_Interpolator.appendSample(current_time+settingTime, q_extension);
@@ -63,6 +69,7 @@ public:
             if(initializeFlag == false){
                 ROS_INFO("phase 2 : start flexion");
                 pref[0] = p_center[0];
+                foot_position.y = 0.0;
                 initializeFlag = true;
             }
             pref[1] = p_center[1] - amplitude * cos(omega * (current_time));
@@ -70,11 +77,19 @@ public:
             Eigen::VectorXd q_buf(2);
             solve_sagittal_IK(pref, q_buf);
             qref.head<2>() = q_buf;
-
             qref[WHEEL] = -(qref[HIP] - q_initialPose[HIP]);    // 車輪が地面に対して動かないように制御
+
+            // 目標脚先位置をPublish
+            foot_position.x = pref[0];
+            foot_position.z = pref[1];
+            foot_position_pub.publish(foot_position);
+
 
             if(current_time > movingTime){
                 initializeFlag = false;
+                ROS_INFO("Enter key to return to initial Pose ...");
+                char buf;
+                std::cin >> buf;    // 待ち
                 phase = 3;
             }
         }

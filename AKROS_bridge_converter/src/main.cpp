@@ -16,7 +16,7 @@ int main(int argc, char** argv){
     ROS_INFO("Converter Ready !");
 
     while(ros::ok()){
-        converter.publish_cmd();
+        converter.publish_can_cmd();
         converter.publish_reply();
         loop_rate.sleep();
     }
