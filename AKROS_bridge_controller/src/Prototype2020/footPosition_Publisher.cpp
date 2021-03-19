@@ -34,7 +34,8 @@ int main(int argc, char** argv){
     ros::init(argc, argv, "FootPosition_publisher");
     ros::NodeHandle nh;
     ros::AsyncSpinner spinner(0);
-    nh.advertise<geometry_msgs::Point32>("foot_position", 1);
+    foot_position_pub = nh.advertise<geometry_msgs::Point32>("foot_position", 1);
+    motor_reply_sub = nh.subscribe("motor_reply", 1, motor_reply_Cb);
 
     spinner.start();
     while(ros::ok()){}

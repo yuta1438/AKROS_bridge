@@ -12,7 +12,7 @@ private:
     const double settingTime = 3.0;
     const double movingTime = 15.0;
 
-    const double wave_frequency = 0.5;       // 脚先正弦波指令の周波数[Hz]
+    const double wave_frequency = 1.0;       // 脚先正弦波指令の周波数[Hz]
     const double amplitude = 0.1;           // 正弦波振幅[m]
     const double omega = 2*M_PI*wave_frequency;
 
