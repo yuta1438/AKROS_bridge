@@ -53,17 +53,17 @@ typedef struct motor_status_{
     uint16_t position = CENTER_POSITION;
     uint16_t position_old = CENTER_POSITION;
     uint16_t position_ref = CENTER_POSITION;
-    int position_overflow_conut = 0; // 上限下限を超えた回数
+    int position_overflow_count = 0; // 上限下限を超えた回数
 
     uint16_t velocity = CENTER_VELOCITY;
     uint16_t velocity_old = CENTER_VELOCITY;
     uint16_t velocity_ref = CENTER_VELOCITY;
-    int velocity_overflow_conut = 0;
+    int velocity_overflow_count = 0;
 
     uint16_t effort = CENTER_EFFORT;
     uint16_t effort_old = CENTER_EFFORT;
     uint16_t effort_ref = CENTER_EFFORT;
-    int effort_overflow_conut = 0;
+    int effort_overflow_count = 0;
 
     uint16_t Kp = 0;
     uint16_t Kd = 0;

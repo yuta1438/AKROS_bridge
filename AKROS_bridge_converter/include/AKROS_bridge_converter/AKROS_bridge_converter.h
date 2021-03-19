@@ -85,6 +85,7 @@ private:
     bool currentState_Cb(AKROS_bridge_msgs::currentState::Request&, AKROS_bridge_msgs::currentState::Response&);
 
     uint8_t find_index(uint8_t);
+    void overflow_check(motor_status&);
 
 public:
     AKROS_bridge_converter(ros::NodeHandle*);

@@ -4,12 +4,12 @@
 #include <string>
 
 namespace AK80_6{
-    const std::string model_name = "AK80-6";
-    const float P_MIN = -12.5f;
-    const float P_MAX = 12.5f;
-    const float V_MIN = -45.0f;
-    const float V_MAX = 45.0f;
-    const float T_MIN = -18.0f;
-    const float T_MAX = 18.0f;
+    static const std::string model_name = "AK80-6";
+    static const float P_MIN = -12.5f;
+    static const float P_MAX = 12.5f;
+    static const float V_MIN = -45.0f;
+    static const float V_MAX = 45.0f;
+    static const float T_MIN = -18.0f;
+    static const float T_MAX = 18.0f;
 }
 #endif

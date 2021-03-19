@@ -24,10 +24,10 @@ AKROS_bridge_converter::AKROS_bridge_converter(ros::NodeHandle* nh_) : spinner(0
     motor_config_client = nh->serviceClient<AKROS_bridge_msgs::motor_config>("motor_config");
     
     // 有効なモータの型番は以下の通り(std::mapを使用して有効かどうか確認する) ----
-    valid_motor_models.insert("AK10-9");
-    valid_motor_models.insert("AK80-6");
-    valid_motor_models.insert("AK10-9_OLD");
-    valid_motor_models.insert("AK80-6_OLD");
+    valid_motor_models.insert(AK10_9::model_name);
+    valid_motor_models.insert(AK80_6::model_name);
+    valid_motor_models.insert(AK10_9_OLD::model_name);
+    valid_motor_models.insert(AK80_6_OLD::model_name);
     // -------------------------
 
     // .yamlファイルからデータを読み込み，rosparamに登録する
@@ -207,9 +207,9 @@ void AKROS_bridge_converter::pack_reply(AKROS_bridge_msgs::motor_reply_single &r
     reply_.effort   = signChange(uint_to_float(motor[index_].effort,   motor[index_].T_MIN, motor[index_].T_MAX, EFFORT_BIT_NUM), motor[index_].inverseDirection);
 
     // オーバーフローを考慮する
-    reply_.position += motor[index_].P_MAX * motor[index_].position_overflow_conut;
-    reply_.velocity += motor[index_].V_MAX * motor[index_].velocity_overflow_conut;
-    reply_.effort   += motor[index_].T_MAX * motor[index_].effort_overflow_conut;
+    reply_.position += motor[index_].P_MAX * signChange(motor[index_].position_overflow_count, motor[index_].inverseDirection);
+    reply_.velocity += motor[index_].V_MAX * signChange(motor[index_].velocity_overflow_count, motor[index_].inverseDirection);
+    reply_.effort   += motor[index_].T_MAX * signChange(motor[index_].effort_overflow_count, motor[index_].inverseDirection);
 }
 
 
@@ -250,6 +250,9 @@ void AKROS_bridge_converter::unpack_can_reply(const AKROS_bridge_msgs::motor_can
     motor[index_].position = can_reply_.position;
     motor[index_].velocity = can_reply_.velocity;
     motor[index_].effort   = can_reply_.effort;
+
+    // オーバーフローしているか確認
+    overflow_check(motor[index_]);
 }
 
 
@@ -438,4 +441,39 @@ uint8_t AKROS_bridge_converter::find_index(uint8_t id_){
         }
     }
     return ERROR_NUM;   // 該当するCAN_IDが無ければぬるぽになるはず
+}
+
+
+// 前回と今回の値を比較してオーバーフローしたかどうかを確認
+// 閾値はビット数をNとして，CENTER_VALUE +- 2^N-2とした
+void AKROS_bridge_converter::overflow_check(motor_status& m){
+    // Position
+    // 上限を突破したか？
+    if((m.position_old > (CENTER_POSITION + (1 << (POSITION_BIT_NUM - 2)))) || (m.position < (CENTER_POSITION - (1 << (POSITION_BIT_NUM - 2))))){
+        m.position_overflow_count++;
+    }
+    // 下限を突破したか？
+    else if((m.position_old < (CENTER_POSITION - (1 << (POSITION_BIT_NUM-2)))) || (m.position > (CENTER_POSITION + (1 << (POSITION_BIT_NUM-2))))){
+        m.position_overflow_count--;
+    }
+
+    // Velocity
+    // 上限を突破したか？
+    if((m.velocity_old > (CENTER_VELOCITY + (1 << (VELOCITY_BIT_NUM - 2)))) || (m.velocity < (CENTER_VELOCITY - (1 << (VELOCITY_BIT_NUM - 2))))){
+        m.velocity_overflow_count++;
+    }
+    // 下限を突破したか？
+    else if((m.velocity_old < (CENTER_VELOCITY - (1 << (VELOCITY_BIT_NUM-2)))) || (m.velocity > (CENTER_VELOCITY + (1 << (VELOCITY_BIT_NUM-2))))){
+        m.position_overflow_count--;
+    }
+
+    // Effort
+    // 上限を突破したか？
+    if((m.effort_old > (CENTER_EFFORT + (1 << (EFFORT_BIT_NUM - 2)))) || (m.effort < (CENTER_EFFORT - (1 << (EFFORT_BIT_NUM - 2))))){
+        m.effort_overflow_count++;
+    }
+    // 下限を突破したか？
+    else if((m.effort_old < (CENTER_EFFORT - (1 << (EFFORT_BIT_NUM-2)))) || (m.effort > (CENTER_EFFORT + (1 << (EFFORT_BIT_NUM-2))))){
+        m.effort_overflow_count--;
+    }
 }
