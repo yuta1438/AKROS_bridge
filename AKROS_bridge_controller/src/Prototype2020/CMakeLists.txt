@@ -36,3 +36,10 @@ target_link_libraries(Prototype2020_wheelmove   ${catkin_LIBRARIES})
 add_executable(Prototype2020_wheelmove_teleop         WheelMove_teleop.cpp)
 add_dependencies(Prototype2020_wheelmove_teleop       ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 target_link_libraries(Prototype2020_wheelmove_teleop  ${catkin_LIBRARIES})
+
+
+# その他
+# FootPosition_Publisher
+add_executable(Prototype2020_footposition_publisher          footPosition_Publisher.cpp)
+add_dependencies(Prototype2020_footposition_publisher        ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+target_link_libraries(Prototype2020_footposition_publisher   ${catkin_LIBRARIES})
