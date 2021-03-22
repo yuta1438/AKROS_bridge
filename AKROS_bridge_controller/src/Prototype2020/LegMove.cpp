@@ -1,6 +1,6 @@
 // 単脚用プログラム
 // 矢状面内で脚を段差の上に動かすプログラム
-// このコントローラを行う前にロボットをinitialPoseにすること！
+// 全体の移動時間をtf[s]，経由点までの時間t1[s]として，tau1(=t1/tf)はMATLABで求めた！
 
 #include <AKROS_bridge_controller/Prototype2020_BaseController.h>
 #include <geometry_msgs/Pose2D.h>
@@ -8,8 +8,8 @@ class LegMove_Controller : public Prototype2020_BaseController{
 private:
     const double marginTime = 1.0;
     const double settingTime = 2.0;
-    const double movingTime = 0.5;
-    const double tau1 = 0.0;    // 中間点を通る時刻の比(MATLABで最適な値を求める！（躍度最小軌道）)
+    const double movingTime = 0.5;  // 移動時間tf
+    const double tau1 = 0.6626;    // 中間点を通る時刻の比(MATLABで最適な値を求める！（躍度最小軌道）)
 
     const double q_initialize_deg[2] = {10.0, -20.0};
 
