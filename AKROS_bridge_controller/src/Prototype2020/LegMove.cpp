@@ -8,8 +8,9 @@ class LegMove_Controller : public Prototype2020_BaseController{
 private:
     const double marginTime = 1.0;
     const double settingTime = 2.0;
-    const double movingTime1 = 0.3;
-    const double movingTime2 = 0.2;
+    const double movingTime = 0.5;
+    const double tau1 = 0.0;    // 中間点を通る時刻の比(MATLABで最適な値を求める！（躍度最小軌道）)
+
     const double q_initialize_deg[2] = {10.0, -20.0};
 
     Eigen::VectorXd q_initialize;
@@ -60,8 +61,8 @@ public:
 
                 leg_Interpolator.clear();
                 leg_Interpolator.appendSample(current_time, p_initialize);
-                leg_Interpolator.appendSample(current_time+movingTime1, p_initialize + delta_p1);
-                leg_Interpolator.appendSample(current_time+movingTime1+movingTime2, p_initialize + delta_p2);
+                leg_Interpolator.appendSample(current_time+(movingTime*tau1), p_initialize + delta_p1);
+                leg_Interpolator.appendSample(current_time+movingTime, p_initialize + delta_p2);
                 leg_Interpolator.update();
                 initializeFlag = true;
             }
