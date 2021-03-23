@@ -208,9 +208,9 @@ void AKROS_bridge_converter::pack_reply(AKROS_bridge_msgs::motor_reply_single &r
 
     // オーバーフローを考慮する
     // 現在うまく行っていないので保留
-    // reply_.position += motor[index_].P_MAX * signChange(motor[index_].position_overflow_count, motor[index_].inverseDirection);
-    // reply_.velocity += motor[index_].V_MAX * signChange(motor[index_].velocity_overflow_count, motor[index_].inverseDirection);
-    // reply_.effort   += motor[index_].T_MAX * signChange(motor[index_].effort_overflow_count, motor[index_].inverseDirection);
+    reply_.position += motor[index_].P_MAX * signChange(motor[index_].position_overflow_count, motor[index_].inverseDirection);
+    reply_.velocity += motor[index_].V_MAX * signChange(motor[index_].velocity_overflow_count, motor[index_].inverseDirection);
+    reply_.effort   += motor[index_].T_MAX * signChange(motor[index_].effort_overflow_count, motor[index_].inverseDirection);
 }
 
 
@@ -448,34 +448,34 @@ uint8_t AKROS_bridge_converter::find_index(uint8_t id_){
 void AKROS_bridge_converter::overflow_check(motor_status& m){
     // Position
     // 上限を突破したか？
-    if((m.position_old > (CENTER_POSITION + (1 << (POSITION_BIT_NUM - 2)))) || (m.position < (CENTER_POSITION - (1 << (POSITION_BIT_NUM - 2))))){
+    if((m.position_old > (CENTER_POSITION + (1 << (POSITION_BIT_NUM - 2)))) && (m.position < (CENTER_POSITION - (1 << (POSITION_BIT_NUM - 2))))){
         // 超えるとどんどんインクリメントしてしまう！
         m.position_overflow_count++;
         std::cout << m.position_overflow_count << std::endl;
     }
     // 下限を突破したか？
-    else if((m.position_old < (CENTER_POSITION - (1 << (POSITION_BIT_NUM-2)))) || (m.position > (CENTER_POSITION + (1 << (POSITION_BIT_NUM-2))))){
+    else if((m.position_old < (CENTER_POSITION - (1 << (POSITION_BIT_NUM-2)))) && (m.position > (CENTER_POSITION + (1 << (POSITION_BIT_NUM-2))))){
         m.position_overflow_count--;
         std::cout << m.position_overflow_count << std::endl;
     }
 
     // Velocity
     // 上限を突破したか？
-    if((m.velocity_old > (CENTER_VELOCITY + (1 << (VELOCITY_BIT_NUM - 2)))) || (m.velocity < (CENTER_VELOCITY - (1 << (VELOCITY_BIT_NUM - 2))))){
+    if((m.velocity_old > (CENTER_VELOCITY + (1 << (VELOCITY_BIT_NUM - 2)))) && (m.velocity < (CENTER_VELOCITY - (1 << (VELOCITY_BIT_NUM - 2))))){
         m.velocity_overflow_count++;
     }
     // 下限を突破したか？
-    else if((m.velocity_old < (CENTER_VELOCITY - (1 << (VELOCITY_BIT_NUM-2)))) || (m.velocity > (CENTER_VELOCITY + (1 << (VELOCITY_BIT_NUM-2))))){
+    else if((m.velocity_old < (CENTER_VELOCITY - (1 << (VELOCITY_BIT_NUM-2)))) && (m.velocity > (CENTER_VELOCITY + (1 << (VELOCITY_BIT_NUM-2))))){
         m.position_overflow_count--;
     }
 
     // Effort
     // 上限を突破したか？
-    if((m.effort_old > (CENTER_EFFORT + (1 << (EFFORT_BIT_NUM - 2)))) || (m.effort < (CENTER_EFFORT - (1 << (EFFORT_BIT_NUM - 2))))){
+    if((m.effort_old > (CENTER_EFFORT + (1 << (EFFORT_BIT_NUM - 2)))) && (m.effort < (CENTER_EFFORT - (1 << (EFFORT_BIT_NUM - 2))))){
         m.effort_overflow_count++;
     }
     // 下限を突破したか？
-    else if((m.effort_old < (CENTER_EFFORT - (1 << (EFFORT_BIT_NUM-2)))) || (m.effort > (CENTER_EFFORT + (1 << (EFFORT_BIT_NUM-2))))){
+    else if((m.effort_old < (CENTER_EFFORT - (1 << (EFFORT_BIT_NUM-2)))) && (m.effort > (CENTER_EFFORT + (1 << (EFFORT_BIT_NUM-2))))){
         m.effort_overflow_count--;
     }
 }
