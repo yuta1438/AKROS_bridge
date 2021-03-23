@@ -243,9 +243,6 @@ void AKROS_bridge_converter::unpack_can_reply(const AKROS_bridge_msgs::motor_can
     motor[index_].position = can_reply_.position;
     motor[index_].velocity = can_reply_.velocity;
     motor[index_].effort   = can_reply_.effort;
-
-    // オーバーフローしているか確認
-    overflow_check(motor[index_]);
 }
 
 
@@ -435,3 +432,5 @@ uint8_t AKROS_bridge_converter::find_index(uint8_t id_){
     }
     return ERROR_NUM;   // 該当するCAN_IDが無ければぬるぽになるはず
 }
+
+
