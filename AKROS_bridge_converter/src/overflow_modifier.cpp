@@ -12,9 +12,9 @@
 // motor_replyの一時保管場所
 typedef struct motor_reply_status_{
     uint8_t can_id;
-    float P_MAX;
-    float V_MAX;
-    float T_MAX;
+    float P_MAX, P_MIN;
+    float V_MAX, V_MIN;
+    float T_MAX, T_MIN;
 
     float position;
     float velocity;
@@ -37,7 +37,8 @@ ros::Subscriber sub;
 
 
 // 前回と今回の値を比較してオーバーフローしたかどうかを確認
-// 閾値はビット数をNとして，CENTER_VALUE +- 2^N-2とした
+// 上限突破 ... (P_MAX/2 < old_value <= P_MAX) && (P_MIN <= new__value < P_MIN/2)
+// 下限突破 ... (P_MIN <= old_value < P_MIN/2) && (P_MAX/2 < new__value <= P_MAX)
 void overflow_check(const AKROS_bridge_msgs::motor_reply& reply_){
     for(int i=0; i<reply_.motor.size(); i++){
         motor[i].can_id   = reply_.motor[i].CAN_ID;
@@ -47,35 +48,49 @@ void overflow_check(const AKROS_bridge_msgs::motor_reply& reply_){
 
         // Position
         // 上限を突破したか？
-        if((motor[i].old_position > (0.0 + (motor[i].P_MAX/2))) && (motor[i].position < (0.0 - motor[i].P_MAX/2))){
+        if(((motor[i].old_position > motor[i].P_MAX/2) && (motor[i].old_position <= motor[i].P_MAX)) && \
+           ((motor[i].position >= motor[i].P_MIN) && (motor[i].position < motor[i].P_MIN/2))){
             motor[i].position_overflow_count++;
             std::cout << motor[i].position_overflow_count << std::endl;
         }
         // 下限を突破したか？
-        else if((motor[i].old_position < (0.0 - (motor[i].P_MAX/2))) && (motor[i].position > (0.0 + motor[i].P_MAX/2))){
+        else if(((motor[i].old_position >= motor[i].P_MIN) && (motor[i].old_position < motor[i].P_MIN/2)) && \
+                ((motor[i].position > motor[i].P_MAX/2) && (motor[i].position <= motor[i].P_MAX))){
             motor[i].position_overflow_count--;
             std::cout << motor[i].position_overflow_count << std::endl;
         }
 
-        // velocity
+
+        // Velocity
         // 上限を突破したか？
-        if((motor[i].old_velocity > (0.0 + (motor[i].P_MAX/2))) && (motor[i].velocity < (0.0 - motor[i].P_MAX/2))){
+        if(((motor[i].old_velocity > motor[i].V_MAX/2) && (motor[i].old_velocity <= motor[i].V_MAX)) && \
+           ((motor[i].velocity >= motor[i].V_MIN) && (motor[i].velocity < motor[i].V_MIN/2))){
             motor[i].velocity_overflow_count++;
+            std::cout << motor[i].velocity_overflow_count << std::endl;
         }
         // 下限を突破したか？
-        else if((motor[i].old_velocity < (0.0 - (motor[i].P_MAX/2))) && (motor[i].velocity > (0.0 + motor[i].P_MAX/2))){
+        else if(((motor[i].old_velocity >= motor[i].V_MIN) && (motor[i].old_velocity < motor[i].V_MIN/2)) && \
+                ((motor[i].velocity > motor[i].V_MAX/2) && (motor[i].velocity <= motor[i].V_MAX))){
             motor[i].velocity_overflow_count--;
+            std::cout << motor[i].velocity_overflow_count << std::endl;
         }
 
-        // effort
+
+        // Effort
         // 上限を突破したか？
-        if((motor[i].old_effort > (0.0 + (motor[i].P_MAX/2))) && (motor[i].effort < (0.0 - motor[i].P_MAX/2))){
+        if(((motor[i].old_effort > motor[i].T_MAX/2) && (motor[i].old_effort <= motor[i].T_MAX)) && \
+           ((motor[i].effort >= motor[i].T_MIN) && (motor[i].effort < motor[i].T_MIN/2))){
             motor[i].effort_overflow_count++;
+            std::cout << motor[i].effort_overflow_count << std::endl;
         }
         // 下限を突破したか？
-        else if((motor[i].old_effort < (0.0 - (motor[i].P_MAX/2))) && (motor[i].effort > (0.0 + motor[i].P_MAX/2))){
+        else if(((motor[i].old_effort >= motor[i].T_MIN) && (motor[i].old_effort < motor[i].T_MIN/2)) && \
+                ((motor[i].effort > motor[i].T_MAX/2) && (motor[i].effort <= motor[i].T_MAX))){
             motor[i].effort_overflow_count--;
+            std::cout << motor[i].effort_overflow_count << std::endl;
         }
+        
+
 
         // 情報の更新
         motor[i].old_position = motor[i].position;
@@ -108,21 +123,33 @@ int main(int argc, char** argv){
             m.P_MAX = AK10_9::P_MAX;
             m.V_MAX = AK10_9::V_MAX;
             m.T_MAX = AK10_9::T_MAX;
+            m.P_MIN = AK10_9::P_MIN;
+            m.V_MIN = AK10_9::V_MIN;
+            m.T_MIN = AK10_9::T_MIN;
         }
         else if(model_name == AK80_6::model_name){
             m.P_MAX = AK80_6::P_MAX;
             m.V_MAX = AK80_6::V_MAX;
             m.T_MAX = AK80_6::T_MAX;
+            m.P_MIN = AK80_6::P_MIN;
+            m.V_MIN = AK80_6::V_MIN;
+            m.T_MIN = AK80_6::T_MIN;
         }
         else if(model_name == AK10_9_OLD::model_name){
             m.P_MAX = AK10_9_OLD::P_MAX;
             m.V_MAX = AK10_9_OLD::V_MAX;
             m.T_MAX = AK10_9_OLD::T_MAX;
+            m.P_MIN = AK10_9_OLD::P_MIN;
+            m.V_MIN = AK10_9_OLD::V_MIN;
+            m.T_MIN = AK10_9_OLD::T_MIN;
         }
         else if(model_name == AK80_6_OLD::model_name){
             m.P_MAX = AK80_6_OLD::P_MAX;
             m.V_MAX = AK80_6_OLD::V_MAX;
             m.T_MAX = AK80_6_OLD::T_MAX;
+            m.P_MIN = AK80_6_OLD::P_MIN;
+            m.V_MIN = AK80_6_OLD::V_MIN;
+            m.T_MIN = AK80_6_OLD::T_MIN;
         }
         motor.push_back(m);
     }
