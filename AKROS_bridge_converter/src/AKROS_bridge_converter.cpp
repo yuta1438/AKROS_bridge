@@ -205,12 +205,6 @@ void AKROS_bridge_converter::pack_reply(AKROS_bridge_msgs::motor_reply_single &r
     reply_.position = signChange(uint_to_float(motor[index_].position + (motor[index_].offset+motor[index_].error), motor[index_].P_MIN, motor[index_].P_MAX, POSITION_BIT_NUM), motor[index_].inverseDirection);
     reply_.velocity = signChange(uint_to_float(motor[index_].velocity, motor[index_].V_MIN, motor[index_].V_MAX, VELOCITY_BIT_NUM), motor[index_].inverseDirection);
     reply_.effort   = signChange(uint_to_float(motor[index_].effort,   motor[index_].T_MIN, motor[index_].T_MAX, EFFORT_BIT_NUM), motor[index_].inverseDirection);
-
-    // オーバーフローを考慮する
-    // 現在うまく行っていないので保留
-    reply_.position += motor[index_].P_MAX * signChange(motor[index_].position_overflow_count, motor[index_].inverseDirection);
-    reply_.velocity += motor[index_].V_MAX * signChange(motor[index_].velocity_overflow_count, motor[index_].inverseDirection);
-    reply_.effort   += motor[index_].T_MAX * signChange(motor[index_].effort_overflow_count, motor[index_].inverseDirection);
 }
 
 
@@ -242,9 +236,9 @@ void AKROS_bridge_converter::unpack_can_reply(const AKROS_bridge_msgs::motor_can
     uint8_t index_ = find_index(can_reply_.CAN_ID);
     motor[index_].CAN_ID   = can_reply_.CAN_ID;     // 無駄かもしれないが...
     // 現在のデータを古いデータに変更
-    motor[index_].position_old = motor[index_].position;
-    motor[index_].velocity_old = motor[index_].velocity;
-    motor[index_].effort_old   = motor[index_].effort;
+    //motor[index_].position_old = motor[index_].position;
+    //motor[index_].velocity_old = motor[index_].velocity;
+    //motor[index_].effort_old   = motor[index_].effort;
     // 最新のデータをmotor_statusに格納
     motor[index_].position = can_reply_.position;
     motor[index_].velocity = can_reply_.velocity;
@@ -440,42 +434,4 @@ uint8_t AKROS_bridge_converter::find_index(uint8_t id_){
         }
     }
     return ERROR_NUM;   // 該当するCAN_IDが無ければぬるぽになるはず
-}
-
-
-// 前回と今回の値を比較してオーバーフローしたかどうかを確認
-// 閾値はビット数をNとして，CENTER_VALUE +- 2^N-2とした
-void AKROS_bridge_converter::overflow_check(motor_status& m){
-    // Position
-    // 上限を突破したか？
-    if((m.position_old > (CENTER_POSITION + (1 << (POSITION_BIT_NUM - 2)))) && (m.position < (CENTER_POSITION - (1 << (POSITION_BIT_NUM - 2))))){
-        // 超えるとどんどんインクリメントしてしまう！
-        m.position_overflow_count++;
-        std::cout << m.position_overflow_count << std::endl;
-    }
-    // 下限を突破したか？
-    else if((m.position_old < (CENTER_POSITION - (1 << (POSITION_BIT_NUM-2)))) && (m.position > (CENTER_POSITION + (1 << (POSITION_BIT_NUM-2))))){
-        m.position_overflow_count--;
-        std::cout << m.position_overflow_count << std::endl;
-    }
-
-    // Velocity
-    // 上限を突破したか？
-    if((m.velocity_old > (CENTER_VELOCITY + (1 << (VELOCITY_BIT_NUM - 2)))) && (m.velocity < (CENTER_VELOCITY - (1 << (VELOCITY_BIT_NUM - 2))))){
-        m.velocity_overflow_count++;
-    }
-    // 下限を突破したか？
-    else if((m.velocity_old < (CENTER_VELOCITY - (1 << (VELOCITY_BIT_NUM-2)))) && (m.velocity > (CENTER_VELOCITY + (1 << (VELOCITY_BIT_NUM-2))))){
-        m.position_overflow_count--;
-    }
-
-    // Effort
-    // 上限を突破したか？
-    if((m.effort_old > (CENTER_EFFORT + (1 << (EFFORT_BIT_NUM - 2)))) && (m.effort < (CENTER_EFFORT - (1 << (EFFORT_BIT_NUM - 2))))){
-        m.effort_overflow_count++;
-    }
-    // 下限を突破したか？
-    else if((m.effort_old < (CENTER_EFFORT - (1 << (EFFORT_BIT_NUM-2)))) && (m.effort > (CENTER_EFFORT + (1 << (EFFORT_BIT_NUM-2))))){
-        m.effort_overflow_count--;
-    }
 }

@@ -7,14 +7,9 @@
 class LegMove_Controller : public Prototype2020_BaseController{
 private:
     const double settingTime = 2.0;
-<<<<<<< HEAD
     const double movingTime = 0.5;  // 移動時間tf
     const double tau1 = 0.6626;    // 中間点を通る時刻の比(MATLABで最適な値を求める！（躍度最小軌道）)
 
-=======
-    const double movingTime1 = 1.5;
-    const double movingTime2 = 1.0;
->>>>>>> 9539810f042905d77d650fb67201e64de6a3b4f0
     const double q_initialize_deg[2] = {10.0, -20.0};
 
     Eigen::VectorXd q_initialize;
