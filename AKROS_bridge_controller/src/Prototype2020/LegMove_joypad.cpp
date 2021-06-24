@@ -1,6 +1,8 @@
 // Prototype2020用プログラム
 // 脚先位置をdualshock4の左ジョイスティックで制御．
 
+// before run this, run "rosrun joy joy_node" to enable joypad.
+
 #include <AKROS_bridge_controller/Prototype2020_BaseController.h>
 #include <sensor_msgs/Joy.h>
 #include <geometry_msgs/Point32.h>
