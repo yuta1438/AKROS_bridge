@@ -1,5 +1,6 @@
 // overflow_modifier
 // converterから帰ってくるモータの応答値が限界値を超えると反対側の限界値に移動してしまうので，それを修正するノード
+// 現在まだ成功していない
 #include <ros/ros.h>
 #include <AKROS_bridge_msgs/motor_reply.h>
 #include <AKROS_bridge_converter/motors/AK10-9.h>

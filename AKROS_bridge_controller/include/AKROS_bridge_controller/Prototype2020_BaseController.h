@@ -78,8 +78,8 @@ public:
     void stopController(void);
     void sendCommand(void);
 
-    bool solve_sagittal_FK(const Eigen::VectorXd&, Eigen::Vector2d&);
-    bool solve_sagittal_IK(const Eigen::Vector2d&, Eigen::VectorXd&);
+    bool solve_sagittal_FK(const Eigen::VectorXd& q, Eigen::Vector2d& p);
+    bool solve_sagittal_IK(const Eigen::Vector2d& p, Eigen::VectorXd& q);
 
     virtual void loop(const ros::TimerEvent& e) = 0;
     virtual ~Prototype2020_BaseController(){};
