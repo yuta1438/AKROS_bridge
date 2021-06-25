@@ -11,12 +11,14 @@ class LegMove_joypad_Controller : public Prototype2020_BaseController{
 private:
     const double settingTime = 2.0;
     geometry_msgs::Point32 joy_cmd;
+    sensor_msgs::Joy latestJoyMsg;
 
     const double radius_x = 0.05;    // x軸方向の最大移動値
     const double radius_z = 0.05;    // y軸方向の最大移動値
 
     ros::Publisher joy_cmd_pub;
     ros::Subscriber joy_sub;
+
 
     Eigen::VectorXd q_initialize;     // 基準姿勢を取るときの脚の角度ベクトル
     Eigen::Vector2d p_initialize;     // 基準となる脚先位置
@@ -60,6 +62,8 @@ public:
                 char buf;
                 std::cin >> buf;    // 待ち
                 phase = 1;
+                pref[0] = p_initialize[0];
+                pref[1] = p_initialize[1];
                 timer_start();
             }
         }
@@ -68,6 +72,7 @@ public:
         // IKを解き，モータへ送信
         else if(phase == 1){
             // ros::spinOnce(); // subscriberのcallback関数を実行
+            ROS_INFO("pref is [%f, %f]", pref[0], pref[1]);
 
             Eigen::VectorXd q_buf(2);
             solve_sagittal_IK(pref, q_buf);
@@ -84,7 +89,9 @@ public:
 
 int main(int argc, char** argv){
     ros::init(argc, argv, "Legmove_joypad_controller");
+    ros::AsyncSpinner spinner(0);
     Prototype2020_BaseController *controller = new LegMove_joypad_Controller;
-    ros::spin();
+    spinner.start();
+    ros::waitForShutdown();
     return 0;
 }
