@@ -3,11 +3,13 @@
 // 全体の移動時間をtf[s]，経由点までの時間t1[s]として，tau1(=t1/tf)はMATLABで求めた！
 
 #include <AKROS_bridge_controller/Prototype2020_BaseController.h>
+#include <stdlib.h>
 #include <geometry_msgs/Point32.h>
 class LegMove_Controller : public Prototype2020_BaseController{
 private:
     const double settingTime = 2.0;
-    const double movingTime = 0.5;  // 移動時間tf
+    //const double movingTime = 0.5;  // 移動時間tf
+    double movingTime;
     const double tau1 = 0.6626;    // 中間点を通る時刻の比(MATLABで最適な値を求める！（躍度最小軌道）)
 
     const double q_initialize_deg[2] = {10.0, -20.0};
@@ -18,7 +20,9 @@ private:
     geometry_msgs::Point32 foot_position;
     ros::Publisher foot_position_pub;
 public:
-    LegMove_Controller(void){
+    LegMove_Controller(double tf_)
+        : movingTime(tf_)
+    {
         foot_position_pub = nh.advertise<geometry_msgs::Point32>("target_foot_position", 1);
 
         q_initialize.resize(LEG_JOINTNUM);
@@ -92,7 +96,16 @@ public:
 
 int main(int argc, char** argv){
     ros::init(argc, argv, "Legmove_Controller");
-    Prototype2020_BaseController *controller = new LegMove_Controller;
+
+    if(argc != 2){
+        ROS_ERROR("Please enter moving_time !");
+        return 0;
+    }
+
+    double tf = atof(argv[1]);
+    ROS_INFO("tf=%f", tf);
+
+    Prototype2020_BaseController *controller = new LegMove_Controller(tf);
     ros::spin();
     return 0;
 }
