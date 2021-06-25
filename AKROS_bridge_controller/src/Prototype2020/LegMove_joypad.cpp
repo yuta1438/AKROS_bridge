@@ -12,8 +12,8 @@ private:
     const double settingTime = 2.0;
     geometry_msgs::Point32 joy_cmd;
 
-    const double radius_x = 0.1;    // x軸方向の最大移動値
-    const double radius_z = 0.1;    // y軸方向の最大移動値
+    const double radius_x = 0.05;    // x軸方向の最大移動値
+    const double radius_z = 0.05;    // y軸方向の最大移動値
 
     ros::Publisher joy_cmd_pub;
     ros::Subscriber joy_sub;
