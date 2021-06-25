@@ -209,3 +209,7 @@ include_directories(
 add_executable(AKROS_bridge_converter src/main.cpp src/basic_op.cpp src/AKROS_bridge_converter.cpp)
 add_dependencies(AKROS_bridge_converter  ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 target_link_libraries(AKROS_bridge_converter ${catkin_LIBRARIES})
+
+add_executable(overflow_modifier src/overflow_modifier.cpp)
+add_dependencies(overflow_modifier  ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+target_link_libraries(overflow_modifier ${catkin_LIBRARIES})

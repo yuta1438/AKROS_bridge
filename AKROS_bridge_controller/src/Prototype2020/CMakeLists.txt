@@ -19,6 +19,12 @@ add_executable(Prototype2020_legmove        LegMove.cpp Prototype2020_BaseContro
 add_dependencies(Prototype2020_legmove      ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 target_link_libraries(Prototype2020_legmove ${catkin_LIBRARIES})
 
+# Prototype2020_legmove_joypad
+add_executable(Prototype2020_legmove_joypad        LegMove_joypad.cpp Prototype2020_BaseController.cpp)
+add_dependencies(Prototype2020_legmove_joypad      ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+target_link_libraries(Prototype2020_legmove_joypad ${catkin_LIBRARIES})
+
+
 # Prototype2020_bending_stretching_offset
 add_executable(Prototype2020_bending_stretching_offset          bending_stretching_offset.cpp Prototype2020_BaseController.cpp)
 add_dependencies(Prototype2020_bending_stretching_offset        ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})

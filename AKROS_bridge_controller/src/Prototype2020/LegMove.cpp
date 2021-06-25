@@ -1,25 +1,29 @@
 // 単脚用プログラム
 // 矢状面内で脚を段差の上に動かすプログラム
-// このコントローラを行う前にロボットをinitialPoseにすること！
+// 全体の移動時間をtf[s]，経由点までの時間t1[s]として，tau1(=t1/tf)はMATLABで求めた！
 
 #include <AKROS_bridge_controller/Prototype2020_BaseController.h>
-#include <geometry_msgs/Pose2D.h>
+#include <stdlib.h>
+#include <geometry_msgs/Point32.h>
 class LegMove_Controller : public Prototype2020_BaseController{
 private:
-    const double marginTime = 1.0;
     const double settingTime = 2.0;
-    const double movingTime1 = 0.3;
-    const double movingTime2 = 0.2;
+    //const double movingTime = 0.5;  // 移動時間tf
+    double movingTime;
+    const double tau1 = 0.6626;    // 中間点を通る時刻の比(MATLABで最適な値を求める！（躍度最小軌道）)
+
     const double q_initialize_deg[2] = {10.0, -20.0};
 
     Eigen::VectorXd q_initialize;
     Eigen::Vector2d p_initialize;
 
-    geometry_msgs::Pose2D leg_pos;
-    ros::Publisher leg_pos_pub;
+    geometry_msgs::Point32 foot_position;
+    ros::Publisher foot_position_pub;
 public:
-    LegMove_Controller(void){
-        leg_pos_pub = nh.advertise<geometry_msgs::Pose2D>("leg_pos", 1);
+    LegMove_Controller(double tf_)
+        : movingTime(tf_)
+    {
+        foot_position_pub = nh.advertise<geometry_msgs::Point32>("target_foot_position", 1);
 
         q_initialize.resize(LEG_JOINTNUM);
         q_initialize << deg2rad(q_initialize_deg[0]), deg2rad(q_initialize_deg[1]);
@@ -60,8 +64,8 @@ public:
 
                 leg_Interpolator.clear();
                 leg_Interpolator.appendSample(current_time, p_initialize);
-                leg_Interpolator.appendSample(current_time+movingTime1, p_initialize + delta_p1);
-                leg_Interpolator.appendSample(current_time+movingTime1+movingTime2, p_initialize + delta_p2);
+                leg_Interpolator.appendSample(current_time+(movingTime*tau1), p_initialize + delta_p1);
+                leg_Interpolator.appendSample(current_time+movingTime, p_initialize + delta_p2);
                 leg_Interpolator.update();
                 initializeFlag = true;
             }
@@ -74,9 +78,9 @@ public:
             // debug
             // -----
             Eigen::Vector2d buff = leg_Interpolator.interpolate(current_time);
-            leg_pos.x = buff[0];
-            leg_pos.y = buff[1];
-            leg_pos_pub.publish(leg_pos);
+            foot_position.x = buff[0];
+            foot_position.z = buff[1];
+            foot_position_pub.publish(foot_position);
             // -----
 
             if(current_time > leg_Interpolator.domainUpper()){
@@ -92,7 +96,16 @@ public:
 
 int main(int argc, char** argv){
     ros::init(argc, argv, "Legmove_Controller");
-    Prototype2020_BaseController *controller = new LegMove_Controller;
+
+    if(argc != 2){
+        ROS_ERROR("Please enter moving_time !");
+        return 0;
+    }
+
+    double tf = atof(argv[1]);
+    ROS_INFO("tf=%f", tf);
+
+    Prototype2020_BaseController *controller = new LegMove_Controller(tf);
     ros::spin();
     return 0;
 }
