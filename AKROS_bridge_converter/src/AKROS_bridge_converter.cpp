@@ -261,6 +261,7 @@ void AKROS_bridge_converter::can_reply_Cb(const AKROS_bridge_msgs::motor_can_rep
     for(uint8_t i=0; i<can_reply_->motor.size(); i++){
         unpack_can_reply(can_reply_->motor[i]);
     }
+    reply.header = can_reply_->header;
     publish_reply();
 }
 
@@ -276,7 +277,9 @@ bool AKROS_bridge_converter::exit_CM_Cb(AKROS_bridge_msgs::exit_control_mode::Re
     if(motor_config_client.call(motor_config_srv)){
         if(motor_config_srv.response.success)
             res_.success = true;
+            return true;
     }
+    return false;
 }
 
 
