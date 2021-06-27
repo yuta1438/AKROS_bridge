@@ -118,6 +118,7 @@ void AKROS_bridge::publish(void){
             can_reply_msg.motor[i].velocity = can_controller.motor[i].velocity;
             can_reply_msg.motor[i].effort   = can_controller.motor[i].effort;
         }
+        can_reply_msg.header.stamp = nh_priv->now();
         can_reply_pub.publish(&can_reply_msg);
    }
     //__enable_irq();
