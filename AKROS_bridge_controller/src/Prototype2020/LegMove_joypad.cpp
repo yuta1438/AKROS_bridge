@@ -6,6 +6,7 @@
 #include <AKROS_bridge_controller/Prototype2020_BaseController.h>
 #include <sensor_msgs/Joy.h>
 #include <geometry_msgs/Point32.h>
+#include <mutex>
 
 class LegMove_joypad_Controller : public Prototype2020_BaseController{
 private:

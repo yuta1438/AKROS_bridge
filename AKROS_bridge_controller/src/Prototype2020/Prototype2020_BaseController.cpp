@@ -56,6 +56,7 @@ void Prototype2020_BaseController::sendCommand(void){
         robot_cmd.motor[i].velocity = (qref[i] - qref_old[i]) * controller_frequency;
     }
     qref_old = qref;    // qrefベクトルの更新
+    robot_cmd.header.stamp = ros::Time::now();
     pub.publish(robot_cmd); // 指令値をpublish
 }
 
