@@ -261,7 +261,11 @@ void AKROS_bridge_converter::can_reply_Cb(const AKROS_bridge_msgs::motor_can_rep
     for(uint8_t i=0; i<can_reply_->motor.size(); i++){
         unpack_can_reply(can_reply_->motor[i]);
     }
+
+    #ifdef USE_TIMESTAMP
     reply.header = can_reply_->header;
+    #endif
+    
     publish_reply();
 }
 
