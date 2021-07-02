@@ -12,7 +12,7 @@ private:
     const double settingTime = 3.0;
     const double movingTime = 15.0;
 
-    const double wave_frequency = 2.0;       // 脚先正弦波指令の周波数[Hz]
+    const double wave_frequency = 1.0;       // 脚先正弦波指令の周波数[Hz]
     const double amplitude = 0.1;           // 正弦波振幅[m]
     const double omega = 2*M_PI*wave_frequency;
 
@@ -57,7 +57,8 @@ public:
 
             if(current_time > joint_Interpolator.domainUpper()){
                 initializeFlag = false;
-                ROS_INFO("Enter key to start moving ...");
+                ROS_INFO("Enter key to start bending and stretching");
+                ROS_INFO("(Freq = %.2f[Hz], Amp = %.2f[m])", wave_frequency, amplitude);
                 char buf;
                 std::cin >> buf;    // 待ち
                 timer_start();
