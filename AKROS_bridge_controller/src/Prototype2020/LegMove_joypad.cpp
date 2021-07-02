@@ -23,7 +23,7 @@ private:
 
     const double radius_x = 0.08;    // x軸方向の最大移動値
     const double radius_z = 0.08;    // y軸方向の最大移動値
-    const double max_wheel_speed;
+    const double max_wheel_speed = 1.0;
 
     const double max_delta_x = 0.005;  // 制御周期ごとの最大x方向移動量
     const double max_delta_z = 0.005;  // 制御周期ごとの最大z方向移動量
