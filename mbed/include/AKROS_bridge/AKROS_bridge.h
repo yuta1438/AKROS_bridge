@@ -9,11 +9,17 @@
 #include <ros.h>
 #include <general_settings.h>
 #include <CAN_controller.h>
-#include <AKROS_bridge_msgs/motor_can_cmd.h>
-#include <AKROS_bridge_msgs/motor_can_reply.h>
+
 #include <AKROS_bridge_msgs/motor_config.h>
 #include <AKROS_bridge_msgs/currentState.h>
 
+#ifndef USE_TIMESTAMP
+#include <AKROS_bridge_msgs/motor_can_cmd.h>
+#include <AKROS_bridge_msgs/motor_can_reply.h>
+#else
+#include <AKROS_bridge_msgs/motor_can_cmd_timestamped.h>
+#include <AKROS_bridge_msgs/motor_can_reply_timestamped.h>
+#endif
 class AKROS_bridge{
 private:
     // Objects

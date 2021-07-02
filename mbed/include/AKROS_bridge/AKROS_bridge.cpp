@@ -87,7 +87,7 @@ void AKROS_bridge::motor_config_Cb(const AKROS_bridge_msgs::motor_config::Reques
             red_led = 0;
             yellow_led = 0;
             green_led = 1;
-            ticker.attach(callback(this, &AKROS_bridge::can_send), 0.001);
+            ticker.attach(callback(this, &AKROS_bridge::can_send), 0.002);	// 短すぎると変になる
             res_.success = true;
             break;
 
@@ -118,9 +118,12 @@ void AKROS_bridge::publish(void){
             can_reply_msg.motor[i].velocity = can_controller.motor[i].velocity;
             can_reply_msg.motor[i].effort   = can_controller.motor[i].effort;
         }
-        can_reply_msg.header.stamp = nh_priv->now();
-        can_reply_pub.publish(&can_reply_msg);
+	#ifdef USE_TIMESTAMP        
+	can_reply_msg.header.stamp = nh_priv->now();
+	#endif        
+
+	can_reply_pub.publish(&can_reply_msg);
    }
     //__enable_irq();
-    wait_ms(10);    // ここを変えるとmismatchedエラー．
+    wait_ms(10);    // publishの周期
 }
