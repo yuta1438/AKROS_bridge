@@ -23,6 +23,7 @@ private:
 
     const double radius_x = 0.08;    // x軸方向の最大移動値
     const double radius_z = 0.08;    // y軸方向の最大移動値
+    const double max_wheel_speed;
 
     const double max_delta_x = 0.005;  // 制御周期ごとの最大x方向移動量
     const double max_delta_z = 0.005;  // 制御周期ごとの最大z方向移動量
@@ -87,7 +88,7 @@ public:
         // joypadを動かしたら次のフェーズを行うようにする
         else if(phase == 1){
             ROS_INFO("Move controller to start controller!");
-            while(!first_operation_done);
+            while(!first_operation_done);   // Segment Faultを防ぐためにコントローラを一度操作してから起動するようにする
 
             ROS_INFO("Enter key to start controlling ...");
             char buf;
@@ -103,8 +104,6 @@ public:
             {
                 std::lock_guard<std::mutex> lock(joy_mutex);
                 
-                // 動かさないとエラーが出る...
-                // latestJoyMsgのresizeが行われない．
                 p_target[0] = -radius_x * latestJoyMsg.axes[0];
                 p_target[1] = radius_z * latestJoyMsg.axes[1];
             }
@@ -112,14 +111,14 @@ public:
             // filter p_target ---
             p_delta = p_target - p_target_old;
 
-            // x軸方向
+            // x軸方向の移動速度制限
             if(p_delta[0] > max_delta_x){
                 p_delta[0] = max_delta_x;
             }else if(p_delta[0] < -max_delta_x){
                 p_delta[0] = -max_delta_x;
             }
 
-            // z軸方向
+            // z軸方向の移動速度制限
             if(p_delta[1] > max_delta_z){
                 p_delta[1] = max_delta_z;
             }else if(p_delta[1] < -max_delta_z){
