@@ -12,9 +12,11 @@ private:
     const double settingTime = 3.0;
     const double movingTime = 15.0;
 
-    const double wave_frequency = 1.0;       // 脚先正弦波指令の周波数[Hz]
-    const double amplitude = 0.1;           // 正弦波振幅[m]
-    const double omega = 2*M_PI*wave_frequency;
+    // const double wave_frequency = 1.0;       // 脚先正弦波指令の周波数[Hz]
+    // const double amplitude = 0.1;           // 正弦波振幅[m]
+    double wave_frequency;
+    double amplitude;
+    double omega;
 
     const double q_extention_deg[2] = {15.0f, -30.0f};   // 一番Kneeを伸ばすポーズ
     const double q_flexion_deg[2] = {60.0f, -120.0f};    // 一番Kneeを曲げるポーズ
@@ -28,10 +30,11 @@ private:
 
 public:
     // コンストラクタ
-    // 
-    Bending_Stretching_Controller(void){
+    Bending_Stretching_Controller(double A_, double f_){
+        amplitude = A_;
+        wave_frequency = f_;
         foot_position_pub = nh.advertise<geometry_msgs::Point32>("Target_foot_position", 1);
-
+        omega = 2*M_PI*wave_frequency;
         q_extension.resize(JOINTNUM);
         // 各種計算
         q_extension << deg2rad(q_extention_deg[0]), deg2rad(q_extention_deg[1]), 0.0;
@@ -121,7 +124,14 @@ public:
 
 int main(int argc, char** argv){
     ros::init(argc, argv, "bending_stretching_Controller");
-    Prototype2020_BaseController *controller = new Bending_Stretching_Controller;
+
+    if(argc != 3){
+        ROS_ERROR("Please enter amplitude and frequency of wave !");
+    }
+
+    double A = atof(argv[1]);
+    double f = atof(argv[2]);
+    Prototype2020_BaseController *controller = new Bending_Stretching_Controller(A, f);
     ros::spin();
     return 0;
 }
