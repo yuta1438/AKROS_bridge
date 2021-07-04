@@ -94,13 +94,13 @@ public:
                 ROS_INFO("Enter key to return to initial Pose ...");
                 char buf;
                 std::cin >> buf;    // 待ち
-                phase = 3;
+                phase = 2;
             }
         }
 
-        else if(phase == 3){
+        else if(phase == 2){
             if(initializeFlag == false){
-                ROS_INFO("phase 3 : finish and move to initial pose");
+                ROS_INFO("phase 2 : finish and move to initial pose");
                 joint_Interpolator.clear();
                 joint_Interpolator.appendSample(current_time, qref);
                 joint_Interpolator.appendSample(current_time + 3.0, q_extension);
