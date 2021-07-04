@@ -12,6 +12,10 @@
 #include <AKROS_bridge_msgs/motor_cmd.h>
 #include <AKROS_bridge_msgs/currentState.h>
 
+#ifdef USE_TIMESTAMP
+#include <AKROS_bridge_msgs/motor_cmd_timestamped.h>
+#endif
+
 // Macros
 #define deg2rad(deg) (((deg) / 360) * 2 * M_PI)
 #define rad2deg(rad) (((rad) / 2 / M_PI) * 360)
