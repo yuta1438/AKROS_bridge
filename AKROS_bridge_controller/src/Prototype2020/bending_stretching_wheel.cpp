@@ -27,7 +27,7 @@ private:
     // wheel locomotion settings
     double wheel_pos_ref;
     double wheel_frequency = 1 / 15.0f;
-    double wheel_amplitude = 1.0 / wheel_D;
+    double wheel_amplitude = 1.0 / (wheel_D/2.0);
     double wheel_omega;
 
 public:
@@ -61,6 +61,11 @@ public:
         if(phase == 0){
             if(!initializeFlag){
                 ROS_INFO("Preparing to start bending_stretching & wheel_locomotion ...");
+                
+                // set Wheel_motor to Velocity-control mode
+                robot_cmd.motor[2].Kp = 0.0;
+                robot_cmd.motor[2].Kd = 3.0;
+                
                 joint_Interpolator.clear();
                 joint_Interpolator.appendSample(current_time, q_init);
                 joint_Interpolator.appendSample(current_time+settingTime, q_extension);
