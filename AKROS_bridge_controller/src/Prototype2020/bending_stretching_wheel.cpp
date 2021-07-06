@@ -10,7 +10,7 @@ class Bending_Stretching_wheel : public Prototype2020_BaseController{
 private:
     const double marginTime = 2.0;
     const double settingTime = 2.0;
-    const double movingTime = 15.0;
+    const double movingTime = 30.0;
 
     const double q_extension_deg[2] = {15.0f, -30.0f};
     const double q_flexion_def[2] = {60.0f, -120.0f};
