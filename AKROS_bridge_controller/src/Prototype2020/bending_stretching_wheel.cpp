@@ -76,9 +76,9 @@ public:
 
             if(current_time > joint_Interpolator.domainUpper()){
                 initializeFlag = false;
-                ROS_INFO("Enter key to start bending and stretching and wheel locomotion");
                 ROS_INFO("leg_amp = %.2f[m], leg_freq = %.2f[Hz]", leg_amplitude, leg_frequency);
                 ROS_INFO("wheel_amp = %.2f[m], wheel_freq = %.2f[Hz]", wheel_amplitude, wheel_frequency);
+                ROS_INFO("Enter key to start bending and stretching and wheel locomotion");
                 char buf;
                 std::cin >> buf;
                 timer_start();
