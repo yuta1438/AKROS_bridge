@@ -52,6 +52,11 @@ add_executable(Prototype2020_hopping          hopping.cpp Prototype2020_BaseCont
 add_dependencies(Prototype2020_hopping        ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 target_link_libraries(Prototype2020_hopping   ${catkin_LIBRARIES})
 
+# Prototype2020_hopping_wheel
+add_executable(Prototype2020_hopping_wheel          hopping_wheel.cpp Prototype2020_BaseController.cpp)
+add_dependencies(Prototype2020_hopping_wheel        ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+target_link_libraries(Prototype2020_hopping_wheel   ${catkin_LIBRARIES})
+
 # その他
 # FootPosition_Publisher
 add_executable(Prototype2020_footposition_publisher          footPosition_Publisher.cpp)

@@ -6,7 +6,7 @@
 class Hopping_Controller : public Prototype2020_BaseController{
 private:
     const double settingTime = 2.0;  // 初期位置に移動する時間
-    const double movingTime = 0.5;  // 伸展時間
+    const double movingTime = 0.08;  // 伸展時間
     double temp_time;
     
     const double q_initialize_deg[2] = {60.0, -120.0};  // 初期関節角度
@@ -56,7 +56,7 @@ public:
         // 跳躍
         else if(phase == 1){
             if(initializeFlag == false){
-                Eigen::Vector2d delta_p1(0.00, -0.10);  // 跳躍後の脚先位置
+                Eigen::Vector2d delta_p1(0.00, -0.16);  // 跳躍後の脚先位置
 
                 leg_Interpolator.clear();
                 leg_Interpolator.appendSample(current_time, p_initialize);  // 初期位置
@@ -69,7 +69,7 @@ public:
             q_buff.resize(LEG_JOINTNUM);
             solve_sagittal_IK(leg_Interpolator.interpolate(current_time), q_buff);  // 逆運動学(現在時刻の脚先位置 → 位置関節角度)
             qref.head<LEG_JOINTNUM>() = q_buff;
-
+			qref[WHEEL] = -qref[WHEEL];
             // debug
             // -----
             Eigen::Vector2d buff = leg_Interpolator.interpolate(current_time);
