@@ -14,12 +14,12 @@ private:
     const double leg_movingTime  = 0.5;        // 跳躍伸展時間[s]
     const double controller_frequency = 100.0; // 制御周期[Hz]
 
-    
     const double q_initialize_deg[2] = {60.0, -120.0};  // 初期関節角度
 
     Eigen::VectorXd q_initialize;    // 関節角度ベクトル定義
     Eigen::VectorXd wheel_vel;  // 車輪の速度ベクトル定義  
     Eigen::Vector2d p_initialize;    // 位置ベクトル定義
+    Eigen::VectorXd wheel_buff;
 
     geometry_msgs::Point32 foot_position;  // 脚先位置のメッセージ定義
     ros::Publisher foot_position_pub;      // 脚先位置のPublisherを定義
@@ -29,6 +29,7 @@ public:
 
         q_initialize.resize(JOINTNUM);    // q_initializeの要素数の変更
         wheel_vel.resize(1);  // wheel_velocityの要素数の変更
+        wheel_buff.resize(1); 
         q_initialize << deg2rad(q_initialize_deg[0]), deg2rad(q_initialize_deg[1]), 0.0;  // q_initializeに代入
     
         solve_sagittal_FK(q_initialize.head<2>(), p_initialize);  // 順運動学(q初期角度 → p初期脚先位置)
@@ -101,10 +102,7 @@ public:
             
             // wheel_velocity = joint_Interpolator.interpolate(current_time);
             // cmd.motor[WHEEL].velocity = joint_Interpolator.interpolate(current_time);
-            Eigen::VectorXd wheel_buff;
-            wheel_buff.resize(1); 
             wheel_buff = joint_Interpolator.interpolate(current_time);
-            robot_cmd.motor[WHEEL].velocity = wheel_buff[0];
 
             // qref = joint_Interpolator.interpolate(current_time);
 
@@ -143,10 +141,8 @@ public:
             foot_position_pub.publish(foot_position);
             // -----
 
-            Eigen::VectorXd wheel_buff;
-            wheel_buff.resize(1); 
             wheel_buff = joint_Interpolator.interpolate(current_time);
-            robot_cmd.motor[WHEEL].velocity = wheel_buff[0] + (-(qref[HIP] - qref_old[HIP]) * controller_frequency);
+            // robot_cmd.motor[WHEEL].velocity = wheel_buff[0] + (-(qref[HIP] - qref_old[HIP]) * controller_frequency);
 
             if(current_time > joint_Interpolator.domainUpper()){  // 車輪走行後であれば
                 initializeFlag = false;
@@ -164,10 +160,8 @@ public:
                 joint_Interpolator.update();
                 initializeFlag = true;
             }
-            Eigen::VectorXd wheel_buff;
-            wheel_buff.resize(1); 
+            
             wheel_buff = joint_Interpolator.interpolate(current_time);
-            robot_cmd.motor[WHEEL].velocity = wheel_buff[0];
 
             if(current_time > joint_Interpolator.domainUpper()){
                 initializeFlag = false;
@@ -177,7 +171,14 @@ public:
                 stopController();
             }
         }
-        sendCommand();
+        robot_cmd.motor[WHEEL].velocity = wheel_buff[0] + (-(qref[HIP] - qref_old[HIP]) * controller_frequency);
+        for(int i=0; i<LEG_JOINTNUM; i++){
+            robot_cmd.motor[i].position = qref[i];
+            robot_cmd.motor[i].velocity = (qref[i] - qref_old[i]) * controller_frequency;
+        }
+        qref_old = qref;    // qrefベクトルの更新
+        pub.publish(robot_cmd); // 指令値をpublish
+        // sendCommand();
     }
 };
 
